@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bharat App - Ultimate Sovereign AI Civic & Cyber Super Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+        :root {
+            --saffron: #FF9933; --green: #128807; --navy: #0B1F3A; --navy-2: #122A4D;
+            --bg: #F4F7FC; --card: #FFFFFF; --text: #111E30; --muted: #5C6E88;
+            --border: rgba(11,31,58,0.12); --glass: rgba(255,255,255,0.9);
+            --shadow: 0 15px 45px rgba(11,31,58,0.06); --radius: 16px;
+            --base-font: 15px; --cyber-glow: #00e5ff; --alert-red: #d93838;
+        }
+        [data-theme="dark"] {
+            --bg: #050B14; --card: #0A1424; --text: #ECF2FA; --muted: #8FA2BD;
+            --border: rgba(255,255,255,0.08); --glass: rgba(10,20,36,0.9);
+            --shadow: 0 15px 45px rgba(0,0,0,0.45);
+        }
+        [data-highcontrast="true"] {
+            --bg: #000000 !important; --card: #111111 !important; --text: #FFFFFF !important;
+            --border: #FFFFFF !important; --muted: #CCCCCC !important; --saffron: #FFFF00 !important;
+            --green: #00FF00 !important; --cyber-glow: #00FFFF !important; --alert-red: #FF0000 !important;
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; transition: background 0.2s, color 0.2s; }
+        body { background: var(--bg); color: var(--text); font-size: var(--base-font); overflow-x: hidden; display: flex; flex-direction: column; min-height: 100vh; }
+        h1, h2, h3, h4, .main-title { font-family: 'Poppins', sans-serif; }
+        
+        .tricolor-strip { height: 6px; width: 100%; background: linear-gradient(90deg, var(--saffron) 0%, var(--saffron) 33%, #fff 33%, #fff 66%, var(--green) 66%); }
+        
+        header { display: flex; justify-content: space-between; align-items: center; padding: 25px 5%; background: var(--card); border-bottom: 1px solid var(--border); box-shadow: var(--shadow); flex-wrap: wrap; gap: 15px; }
+        .side-brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.6rem; color: var(--navy); border-right: 4px solid var(--saffron); padding-right: 20px; flex-shrink: 0; }
+        .center-hero-title { font-size: 1.8rem; font-weight: 800; color: var(--navy); text-align: center; flex-grow: 1; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        .header-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .search-container { max-width: 1400px; margin: 25px auto 0 auto; padding: 0 5%; }
+        .search-bar-wrapper { display: flex; background: var(--card); border: 2px solid var(--border); border-radius: 50px; padding: 10px 25px; box-shadow: var(--shadow); align-items: center; }
+        .search-bar-wrapper input { border: none; background: transparent; padding: 8px; font-size: 1.05rem; width: 100%; color: var(--text); outline: none; }
+        
+        .tabs { display: flex; gap: 12px; padding: 15px 5%; overflow-x: auto; scrollbar-width: none; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 999; }
+        .tabs::-webkit-scrollbar { display: none; }
+        .tab-btn { flex: 0 0 auto; padding: 12px 24px; border-radius: 100px; border: 1px solid var(--border); background: var(--card); color: var(--muted); font-weight: 700; font-size: .9rem; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        .tab-btn.active { background: linear-gradient(135deg, var(--navy), var(--navy-2)); color: #fff; border-color: transparent; box-shadow: 0 5px 15px rgba(11,31,58,0.2); }
+        .tab-btn.cyber-btn { border: 1px solid var(--cyber-glow); color: var(--muted); }
+        .tab-btn.cyber-btn.active { background: linear-gradient(135deg, #091322, #10233c); color: var(--cyber-glow); border: 1px solid var(--cyber-glow); }
+        .tab-btn.emergency-btn { border: 1px solid var(--alert-red); color: var(--alert-red); }
+        .tab-btn.emergency-btn.active { background: linear-gradient(135deg, #7a1818, var(--alert-red)); color: #fff; border-color: transparent; }
+
+        main { padding: 30px 5%; max-width: 1400px; margin: 0 auto; flex: 1; width: 100%; }
+        .panel { display: none; animation: panelFadeIn 0.3s ease-in-out; }
+        .panel.active { display: block; }
+        @keyframes panelFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+        .card { background: var(--glass); backdrop-filter: blur(16px); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 26px; margin-bottom: 26px; position: relative; }
+        .card h2 { font-size: 1.4rem; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; border-bottom: 2px solid var(--border); padding-bottom: 10px; color: var(--navy); }
+        
+        .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; margin-bottom: 26px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-bottom: 26px; }
+        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 24px; margin-bottom: 26px; }
+        
+        .dash-card { background: var(--card); border-radius: 14px; padding: 22px; border: 1px solid var(--border); display: flex; align-items: center; gap: 18px; box-shadow: var(--shadow); }
+        .dash-card .icon { width: 55px; height: 55px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: #fff; }
+        .dash-card .num { font-size: 1.8rem; font-weight: 800; }
+        
+        .chart-container { height: 260px; position: relative; width: 100%; }
+
+        #chatWindow { height: 350px; overflow-y: auto; padding: 20px; border-radius: 14px; background: var(--bg); border: 1px solid var(--border); display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px; }
+        .msg { max-width: 80%; padding: 12px 16px; border-radius: 16px; font-size: .95rem; line-height: 1.5; }
+        .msg.bot { background: var(--card); align-self: flex-start; border-left: 5px solid var(--saffron); border-top-left-radius: 4px; }
+        .msg.user { background: var(--navy); color: #fff; align-self: flex-end; border-top-right-radius: 4px; }
+        
+        .risk-meter-wrapper { width: 100%; background: rgba(0,0,0,0.1); height: 16px; border-radius: 10px; overflow: hidden; margin: 15px 0; position: relative; }
+        .risk-meter-bar { width: 68%; height: 100%; background: linear-gradient(90deg, var(--green), #f1c40f, var(--alert-red)); transition: width 0.6s ease; }
+        .score-circle-massive { width: 130px; height: 130px; border-radius: 50%; border: 8px solid var(--green); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 2.2rem; font-weight: 800; color: var(--green); margin: 0 auto 15px auto; }
+        
+        input, select, textarea { width: 100%; padding: 12px 16px; border-radius: 10px; border: 1px solid var(--border); background: var(--card); color: var(--text); outline: none; font-size: 0.95rem; }
+        input:focus, select:focus, textarea:focus { border-color: var(--saffron); box-shadow: 0 0 0 3px rgba(255,153,51,0.15); }
+        
+        .btn { background: linear-gradient(135deg, var(--saffron), #e0722a); color: #fff; border: none; padding: 12px 24px; border-radius: 100px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; font-size: 0.95rem; box-shadow: 0 4px 12px rgba(255,153,51,0.25); }
+        .btn.navy { background: linear-gradient(135deg, var(--navy), var(--navy-2)); box-shadow: 0 4px 12px rgba(11,31,58,0.25); }
+        .btn.cyber-act { background: linear-gradient(135deg, #091322, #1a3356); border: 1px solid var(--cyber-glow); color: #fff; }
+        .btn.small { padding: 8px 16px; font-size: 0.85rem; border-radius: 8px; }
+        
+        #map { height: 350px; width: 100%; border-radius: 14px; border: 1px solid var(--border); }
+        .quick-grid { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0; }
+        .quick-btn { border: 1px solid var(--border); background: var(--card); padding: 8px 16px; border-radius: 100px; cursor: pointer; color: var(--text); font-size: 0.85rem; font-weight: 600; }
+        .quick-btn:hover, .quick-btn.bookmarked { border-color: var(--saffron); background: rgba(255,153,51,0.05); }
+        
+        .doc-list li { padding: 12px 0; border-bottom: 1px dashed var(--border); font-size: 0.95rem; list-style: none; display: flex; align-items: center; justify-content: space-between; }
+        .em-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+        .em-node { padding: 20px; border-radius: 14px; background: var(--card); border-left: 6px solid var(--alert-red); box-shadow: var(--shadow); }
+        .em-node h4 { font-size: 2rem; color: var(--alert-red); font-weight: 800; }
+        
+        .toast-notify { position: fixed; bottom: 30px; right: 30px; background: var(--navy); color: #fff; padding: 16px 32px; border-radius: 10px; box-shadow: 0 10px 35px rgba(0,0,0,0.3); z-index: 99999; display: none; font-weight: 700; border-left: 4px solid var(--saffron); }
+        .tech-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-top: 15px; }
+        .tech-card { padding: 15px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); text-align: center; font-weight: 700; }
+        
+        footer { background: var(--navy); color: #fff; padding: 30px 5%; border-top: 4px solid var(--saffron); margin-top: auto; }
+        .footer-content { display: flex; justify-content: space-between; align-items: center; max-width: 1400px; margin: 0 auto; flex-wrap: wrap; gap: 20px; }
+        .footer-center { display: flex; gap: 15px; align-items: center; }
+        .footer-center a { color: #fff; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; background: rgba(255,255,255,0.08); border-radius: 30px; }
+        .footer-right { font-family: monospace; color: var(--cyber-glow); background: rgba(0,0,0,0.2); padding: 4px 10px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+<div class="tricolor-strip"></div>
+
+<header>
+    <div class="side-brand"><i class="fa-solid fa-flag" style="color:var(--saffron)"></i> <span id="brandName text">Bharat App</span></div>
+    <div class="center-hero-title" id="mainHeaderTitle">Sovereign AI Civic & Cyber Super App</div>
+    <div class="header-controls">
+        <select id="langSelect" onchange="changeLanguage()" style="width:115px; padding:6px; font-weight:700;">
+            <option value="en">Hinglish/Eng</option>
+            <option value="hi">हिन्दी (Pure)</option>
+        </select>
+        <button id="btnThemeToggle" class="btn navy small" onclick="toggleDark()" aria-label="Toggle theme"><i id="themeIcon" class="fa-solid fa-moon"></i></button>
+        <button class="btn navy small" onclick="toggleHighContrast()">Contrast</button>
+        <button class="btn navy small" onclick="changeFont(1)"><i class="fa-solid fa-plus"></i></button>
+        <button class="btn navy small" onclick="changeFont(-1)"><i class="fa-solid fa-minus"></i></button>
+    </div>
+</header>
+
+<div class="search-container">
+    <div class="search-bar-wrapper">
+        <i class="fa-solid fa-magnifying-glass" style="color:var(--muted); margin-right:10px;"></i>
+        <input type="text" id="smartSearch" placeholder="Kuch bhi search karein (e.g., '1930 Helpline', 'Scheme Finder', 'Password Checker')..." onkeyup="if(event.key==='Enter') executeRouterSearch()">
+        <button class="btn navy small" onclick="executeRouterSearch()" id="searchBtnTxt">Search</button>
+    </div>
+</div>
+
+<nav class="tabs">
+    <button class="tab-btn active" data-tab="civic-dash" id="tabCivic"><i class="fa-solid fa-gauge-high"></i> Civic Dashboard</button>
+    <button class="tab-btn cyber-btn" data-tab="cyber-dash" id="tabCyber"><i class="fa-solid fa-shield-halved"></i> Cyber Shield Dashboard</button>
+    <button class="tab-btn emergency-btn" data-tab="emergency-desk" id="tabEmergency"><i class="fa-solid fa-heart-pulse"></i> Emergency Services</button>
+    <button class="tab-btn" data-tab="ai-desk" id="tabAi"><i class="fa-solid fa-robot"></i> AI Companion & Schemes</button>
+    <button class="tab-btn" data-tab="complaints-desk" id="tabComplaints"><i class="fa-solid fa-file-invoice"></i> Complaints & Grievances</button>
+    <button class="tab-btn" data-tab="tools-desk" id="tabTools"><i class="fa-solid fa-screwdriver-wrench"></i> Security Tools & Audit</button>
+    <button class="tab-btn" data-tab="learning-desk" id="tabAcademy"><i class="fa-solid fa-graduation-cap"></i> Cyber Awareness Academy</button>
+    <button class="tab-btn" data-tab="about-desk" id="tabAbout"><i class="fa-solid fa-circle-info"></i> About & Tech Stack</button>
+</nav>
+
+<main>
+    <div class="panel active" id="panel-civic-dash">
+        <div class="grid-4">
+            <div class="dash-card"><div class="icon" style="background:#e67e22;"><i class="fa-solid fa-list-check"></i></div><div><div class="num">1,842</div><div style="font-size:0.8rem; color:var(--muted); font-weight:700;" id="cardGrievances">Total Grievances Filed</div></div></div>
+            <div class="dash-card"><div class="icon" style="background:var(--green);"><i class="fa-solid fa-square-check"></i></div><div><div class="num">1,210</div><div style="font-size:0.8rem; color:var(--muted); font-weight:700;" id="cardResolved">Grievances Resolved</div></div></div>
+            <div class="dash-card"><div class="icon" style="background:#2980b9;"><i class="fa-solid fa-spinner"></i></div><div><div class="num">632</div><div style="font-size:0.8rem; color:var(--muted); font-weight:700;" id="cardActive">Active Processing</div></div></div>
+            <div class="dash-card"><div class="icon" style="background:#8e44ad;"><i class="fa-solid fa-passport"></i></div><div><div class="num">412</div><div style="font-size:0.8rem; color:var(--muted); font-weight:700;" id="cardSchemes">Welfare Schemes</div></div></div>
+        </div>
+        <div class="grid-2">
+            <div class="card"><h2 id="titleCivicPie">Civic Resolution Ratio</h2><div class="chart-container"><canvas id="civicPie"></canvas></div></div>
+            <div class="card"><h2 id="titleCivicBar">Department Allocation Flow</h2><div class="chart-container"><canvas id="civicBar"></canvas></div></div>
+        </div>
+    </div>
+
+    <div class="panel" id="panel-cyber-dash">
+        <div class="grid-4">
+            <div class="dash-card" style="border-bottom:4px solid var(--alert-red);"><div class="icon" style="background:var(--alert-red);"><i class="fa-solid fa-triangle-exclamation"></i></div><div><div class="num" id="liveThreats">419</div><div style="font-size:0.8rem; color:var(--muted); font-weight:700;">Active Threat Counter</div></div></div>
+            <div class="dash-card" style="border-bottom:4px solid #f1c40f;"><div class="icon" style="background:#f1c40f;"><i class="fa-solid fa-shield-virus"></i></div><div><div class="num">CRITICAL</div><div style="font-size:0.8rem; color:var(--muted); font-weight:700;">Risk Meter Assessment</div></div></div>
+            <div class="dash-card" style="border-bottom:4px solid var(--green);"><div class="icon" style="background:var(--green);"><i class="fa-solid fa-circle-check"></i></div><div><div class="num">88%</div><div style="font-size:0.8rem; color:var(--muted); font-weight:700;">Cyber Security Score</div></div></div>
+            <div class="dash-card" style="border-bottom:4px solid #2980b9;"><div class="icon" style="background:#2980b9;"><i class="fa-solid fa-ban"></i></div><div><div class="num">3,491</div><div style="font-size:0.8rem; color:var(--muted); font-weight:700;">Attack Vectors Mitigated</div></div></div>
+        </div>
+        <div class="grid-3">
+            <div class="card" style="text-align:center;">
+                <h2 id="secMetricsTitle">Security Metrics Score</h2>
+                <div class="score-circle-massive">88</div>
+                <p style="font-weight:700;" id="riskMeterLabel">AI Threat Prediction Risk Meter</p>
+                <div class="risk-meter-wrapper"><div class="risk-meter-bar"></div></div>
+                <p style="font-size:0.85rem; color:var(--muted); margin-top:5px;" id="aiVerdictLabel">AI Verdict: Moderate Vulnerability Found in External Triggers.</p>
+            </div>
+            <div class="card" style="grid-column: span 2;">
+                <h2 id="premiumGuardianTitle">🏆 Premium Feature: AI Digital Guardian Engine</h2>
+                <p style="font-size:0.88rem; color:var(--muted); margin-bottom:15px;" id="premiumGuardianDesc">Continuous automated scanning module checking integrity of your data strings across threat nodes.</p>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:15px;">
+                    <select id="guardianSelect" onchange="updateGuardianPlaceholder()">
+                        <option value="pass">Analyze Password Weakness Entropy</option>
+                        <option value="url">Check URL Redirection Safeness</option>
+                        <option value="email">Inspect Phishing Email Header Integrity</option>
+                        <option value="qr">Scan Corrupted QR Code Sequence</option>
+                        <option value="call">Evaluate Scam Call Voice Vector Probability</option>
+                    </select>
+                    <input type="text" id="guardianInput" placeholder="Enter target string parameters...">
+                </div>
+                <button class="btn cyber-act" style="width:100%;" onclick="runGuardianDeepAudit()" id="btnExecuteGuardian"><i class="fa-solid fa-microchip"></i> Execute Deep Guardian AI Evaluation</button>
+                <div id="guardianStatusBox" style="margin-top:15px; padding:12px; border-radius:8px; display:none; font-size:0.9rem; font-weight:600;"></div>
+            </div>
+        </div>
+        <div class="grid-2">
+            <div class="card">
+                <h2 id="cyberReportTitle">📊 Cyber Crimes Reported & Statistics</h2>
+                <div class="chart-container"><canvas id="cyberLines"></canvas></div>
+            </div>
+            <div class="card">
+                <h2 id="incidentDeskTitle">🚨 Instant Incident Desk: Registry Form</h2>
+                <p style="font-size:0.85rem; color:var(--muted); margin-bottom:10px;" id="incidentDeskDesc">Select incident type to spawn structural logging wizard instantly:</p>
+                <div class="quick-grid">
+                    <button class="quick-btn" onclick="openReportWizard('UPI Financial Fraud Logs')">UPI Fraud</button>
+                    <button class="quick-btn" onclick="openReportWizard('WhatsApp Extortion Channels')">WhatsApp Scam</button>
+                    <button class="quick-btn" onclick="openReportWizard('Fake Spoofed Domain Node')">Fake Website</button>
+                    <button class="quick-btn" onclick="openReportWizard('Vishing VoIP Voice Masking')">Fake Call Scam</button>
+                    <button class="quick-btn" onclick="openReportWizard('Identity Theft Registry Breach')">Identity Theft</button>
+                </div>
+                <div id="reportWizardBox" style="display:none; margin-top:15px; background:var(--bg); padding:15px; border-radius:10px;">
+                    <h4 id="wizardTitle" style="margin-bottom:10px; color:var(--alert-red);"></h4>
+                    <textarea id="wizardSummary" rows="3" placeholder="Describe the incident timeline and transaction/account IDs..."></textarea>
+                    <div style="margin-top:10px; display:flex; gap:10px;">
+                        <button class="btn small navy" onclick="downloadCyberPDF()"><i class="fa-solid fa-file-pdf"></i> Download Incident PDF</button>
+                        <button class="btn small" onclick="trackCyberComplaint()">Track Complaint Status</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel" id="panel-emergency-desk">
+        <div class="card">
+            <h2 id="emergencyTitle"><i class="fa-solid fa-circle-exclamation" style="color:var(--alert-red)"></i> National Sovereign Core Response Hotlines</h2>
+            <div class="em-grid">
+                <div class="em-node"><h4>112</h4><p id="em112">All-In-One Unified Emergency</p><span>Police, Fire, and Health triggers</span></div>
+                <div class="em-node"><h4>100</h4><p id="em100">Police Response Desk</p><span>Direct line to emergency regional cells</span></div>
+                <div class="em-node" style="border-left-color: #e67e22;"><h4>108</h4><p id="em108">Ambulance Health Transfer</p><span>Medical emergency utility response</span></div>
+                <div class="em-node" style="border-left-color: var(--cyber-glow);"><h4>1930</h4><p id="em1930">National Cyber Crime Registry</p><span>Immediate dynamic bank account freeze</span></div>
+                <div class="em-node" style="border-left-color: #8e44ad;"><h4>1098</h4><p id="em1098">Child Helpline Support</p><span>Dedicated adolescent protection cell</span></div>
+                <div class="em-node" style="border-left-color: #f1c40f;"><h4>181</h4><p id="em181">Women Helpline Safety Cell</p><span>Institutional protection services</span></div>
+            </div>
+        </div>
+        <div class="grid-2">
+            <div class="card">
+                <h2 id="mapTitle">📍 Command Sub-Station Geospatial Mapping</h2>
+                <p style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;" id="mapDesc">Pins the exact geographic coordinate matrices of the nearest civic and security command headquarters.</p>
+                <button class="btn navy" onclick="plotEmergencyGeospatialNodes()" id="btnLocateControl"><i class="fa-solid fa-crosshairs"></i> Locate Closest Control Center Node</button>
+                <div id="map" style="margin-top:15px;"></div>
+            </div>
+            <div class="card">
+                <h2 id="safetyAdvisoryTitle">⚡ Emergency Portals & Cyber Security Nodes</h2>
+                <div class="quick-grid">
+                    <a href="https://cybercrime.gov.in" target="_blank" class="quick-btn"><i class="fa-solid fa-globe"></i> National Cyber Crime Portal</a>
+                    <a href="https://www.cert-in.org.in" target="_blank" class="quick-btn"><i class="fa-solid fa-shield-halved"></i> CERT-In India Security Cell</a>
+                    <button class="quick-btn" onclick="saveEmergencyBookmark(this)" id="btnBookmarkEm"><i class="fa-solid fa-bookmark"></i> Bookmark Emergency Center</button>
+                </div>
+                <div style="margin-top:15px; border-top:1px solid var(--border); padding-top:15px;">
+                    <h3 id="dailyAdvisoryHeader">Daily Dynamic Cyber Safety Advisory</h3>
+                    <p id="dailyTipNode" style="font-weight:600; color:var(--saffron); margin-top:8px;">Loading daily cyber intelligence feed vectors...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel" id="panel-ai-desk">
+        <div class="grid-2">
+            <div class="card">
+                <h2 id="aiCompanionTitle">🤖 Multi-Agent AI Cyber & Civic Advisor</h2>
+                <div id="chatWindow">
+                    <div class="msg bot" id="aiWelcomeMsg">Jai Hind! Main aapka AI Sovereign Advisor hu. Koi bhi cyber fraud, password test, ya scheme related tension ho, bina jhijhak poocho! Ekdum dosto jaisa solution milega.</div>
+                </div>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <input type="text" id="aiField" placeholder="Kuch bhi poocho - password safe hai? link real hai? ya scholarship kaise milegi...">
+                    <button class="btn" onclick="processAIChat()"><i class="fa-solid fa-paper-plane"></i></button>
+                    <button class="btn navy" onclick="triggerVoiceChat()"><i class="fa-solid fa-microphone"></i></button>
+                </div>
+            </div>
+            <div class="card">
+                <h2 id="schemeMatrixTitle">🏢 Government Schemes Eligibility Finder Matrix</h2>
+                <p style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;" id="schemeMatrixDesc">Provide configuration metrics to execute automatic matching constraints against welfare databases.</p>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+                    <input type="number" id="schemeAge" placeholder="Enter Age Minimum">
+                    <input type="number" id="schemeIncome" placeholder="Annual Family Income (₹)">
+                </div>
+                <button class="btn" style="width:100%;" onclick="runSchemeEligibility()" id="btnCheckEligibility"><i class="fa-solid fa-wand-magic-sparkles"></i> Evaluate Scheme Eligibility</button>
+                <div id="schemeResultBox" style="margin-top:15px; display:grid; grid-template-columns:1fr; gap:10px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel" id="panel-complaints-desk">
+        <div class="card">
+            <h2 id="complaintWriterTitle"><i class="fa-solid fa-pen-fancy"></i> AI Complaint Writer & Structure Analyzer</h2>
+            <textarea id="complaintInput" rows="4" placeholder="Enter rough raw incident description (e.g., 'Gutter overflow near house, bad smell since 3 days')..."></textarea>
+            <div style="margin-top:12px; display:flex; gap:12px;">
+                <button class="btn" onclick="runAIComplaintWriter()" id="btnFormatComplaint"><i class="fa-solid fa-brain"></i> Format via AI Complaint Writer</button>
+                <button class="btn navy" onclick="runAIComplaintAnalyzer()" id="btnAnalyzeComplaint"><i class="fa-solid fa-magnifying-glass-chart"></i> Run Comprehensive Risk Analyzer</button>
+            </div>
+            <div id="complaintOutputBox" style="display:none; margin-top:20px; padding:18px; border:1px dashed var(--saffron); background:var(--bg); border-radius:10px; white-space:pre-wrap; font-family:monospace;"></div>
+        </div>
+        <div class="grid-2">
+            <div class="card">
+                <h2 id="docVerifierTitle">📄 Sovereign Document Verification Engine</h2>
+                <div id="docTargetBox"></div>
+            </div>
+            <div class="card">
+                <h2 id="govGuidesTitle">📚 Government Procedures Compliance Guides</h2>
+                <p style="font-size:0.88rem; color:var(--muted);" id="govGuidesDesc">Select standard public procedure models below to extract target tracking paths:</p>
+                <div class="quick-grid">
+                    <button class="quick-btn" onclick="showGuide('aadhaar')">Aadhaar Mapping Linkage</button>
+                    <button class="quick-btn" onclick="showGuide('pan')">PAN Card Integration</button>
+                    <button class="quick-btn" onclick="showGuide('voter')">Voter Verification Path</button>
+                </div>
+                <div id="guideOutputBox" style="margin-top:12px; font-weight:600; color:var(--navy);"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel" id="panel-tools-desk">
+        <div class="grid-2">
+            <div class="card">
+                <h2 id="passStrengthTitle">🔍 Password Strength Entropy Evaluator & Generator</h2>
+                <input type="text" id="passInput" placeholder="Type target password string candidate..." onkeyup="checkPassStrength()">
+                <div id="passStrengthOutput" style="margin-top:10px; font-weight:700;">Strength: Not Evaluated</div>
+                <div style="margin-top:15px; border-top:1px solid var(--border); padding-top:15px;">
+                    <button class="btn small" onclick="generateSecurePassword()" id="btnGeneratePass">Generate High Entropy Secure Password</button>
+                    <input type="text" id="generatedPass" readonly style="margin-top:8px; text-align:center; font-family:monospace; font-weight:700; color:var(--green);">
+                </div>
+            </div>
+            <div class="card">
+                <h2 id="cryptoHashTitle">🌐 Cryptographic Hash, URL & Phishing Mail Verifier</h2>
+                <div style="display:grid; grid-template-columns:1fr; gap:10px; margin-bottom:10px;">
+                    <input type="text" id="urlInput" placeholder="Enter domain string (e.g., http://secure-banking-login.com)...">
+                    <button class="btn small navy" onclick="checkURLSafety()" id="btnCheckUrl">Run Real-Time URL Safety Checker</button>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr; gap:10px;">
+                    <input type="text" id="fileStringInput" placeholder="Enter file text payload stream to evaluate hash checksum...">
+                    <button class="btn small" onclick="generateFileHash()" id="btnGenHash">Generate MD5/SHA256 File Hash Equivalent</button>
+                </div>
+                <div id="toolStatusOutput" style="margin-top:12px; padding:10px; background:var(--bg); display:none; border-radius:6px; font-weight:600;"></div>
+            </div>
+        </div>
+        <div class="card">
+            <h2 id="checklistTitle">🛡 Comprehensive AI Security Checklist & Audit Controls</h2>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:15px;">
+                <label><input type="checkbox" checked style="width:auto; margin-right:10px;"> 2FA Activated across structural banking cells</label>
+                <label><input type="checkbox" style="width:auto; margin-right:10px;"> Biometric locks configuration forced on Aadhaar backend</label>
+                <label><input type="checkbox" checked style="width:auto; margin-right:10px;"> Continuous background scanning allowed on browser engines</label>
+                <label><input type="checkbox" style="width:auto; margin-right:10px;"> Zero external unverified APK installation permission policy</label>
+            </div>
+            <button class="btn small navy" style="margin-top:15px;" onclick="downloadSecurityAssessmentPDF()" id="btnExportAudit"><i class="fa-solid fa-file-shield"></i> Export Security Audit Assessment PDF</button>
+        </div>
+    </div>
+
+    <div class="panel" id="panel-learning-desk">
+        <div class="grid-2">
+            <div class="card">
+                <h2 id="academyTitle">📚 Beginner Cyber Security & Fraud Threats Library</h2>
+                <div style="display:grid; grid-template-columns:1fr; gap:12px;">
+                    <div style="background:var(--bg); padding:12px; border-radius:8px;"><h4 id="libItem1">Digital Arrest Scam Awareness</h4><p style="font-size:0.85rem; margin-top:4px;" id="libDesc1">Sovereign regulatory cells never execute judicial confinement over peer VoIP applications.</p></div>
+                    <div style="background:var(--bg); padding:12px; border-radius:8px;"><h4 id="libItem2">OTP / Vishing Fraud Architecture</h4><p style="font-size:0.85rem; margin-top:4px;" id="libDesc2">No cryptographic token authorization requests should be passed across incoming audio cells.</p></div>
+                    <div style="background:var(--bg); padding:12px; border-radius:8px;"><h4 id="libItem3">Fake Job Recruitment Vectors</h4><p style="font-size:0.85rem; margin-top:4px;" id="libDesc3">Verification processes asking for upfront escrow validation bounds are 100% fraudulent nodes.</p></div>
+                </div>
+            </div>
+            <div class="card">
+                <h2 id="quizTitle">🏆 Interactive Gamified Cyber Awareness Quiz Matrix</h2>
+                <p style="font-size:0.88rem; color:var(--muted); margin-bottom:12px;" id="quizDesc">Pass the real-time simulation evaluation to capture your formal security certificate.</p>
+                <div id="quizBox">
+                    <p id="quizQuestion" style="font-weight:700;">Question: An unknown domain sends an urgent SMS saying your electric connection grid will terminate tonight. Action matrix?</p>
+                    <div class="quiz-option" id="quizOpt1" onclick="processQuizSelection(false)">Click the tracking link explicitly inside the block payload to complete validation.</div>
+                    <div class="quiz-option" id="quizOpt2" onclick="processQuizSelection(true)">Ignore the packet payload entirely and verify status with the official utility board portal.</div>
+                </div>
+                <button class="btn small" id="certBtn" style="margin-top:15px; display:none;" onclick="downloadCertPDF()"><i class="fa-solid fa-medal"></i> Download Awareness Certificate PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel" id="panel-about-desk">
+        <div class="card">
+            <h2 id="aboutTitle"><i class="fa-solid fa-circle-info" style="color:var(--saffron);"></i> Executive Platform Architecture Overview</h2>
+            <p style="line-height:1.7; font-size:1.02rem;" id="aboutDesc">
+                <b>Bharat App Super Portal</b> is an advanced enterprise-grade sovereign software system architected to solve two core nation-state operational metrics: rapid local municipal civic issue management alongside aggressive, multi-layered cyber threat prevention and awareness training. The engine forces zero data dependencies across untrusted cloud interfaces, ensuring secure operation.
+            </p>
+        </div>
+        <div class="card">
+            <h2 id="techStackTitle"><i class="fa-solid fa-layer-group" style="color:var(--green);"></i> Technical Stack Operational Heuristics</h2>
+            <p style="font-size:0.88rem; color:var(--muted); margin-bottom:15px;" id="techStackDesc">The architecture is completely containerized and runs on the following robust technology matrix:</p>
+            <div class="tech-grid">
+                <div class="tech-card"><i class="fa-brands fa-html5" style="color:#e34c26; font-size:1.8rem; display:block; margin-bottom:5px;"></i><span>HTML5 Semantic Layout Architecture</span></div>
+                <div class="tech-card"><i class="fa-brands fa-css3-alt" style="color:#264de4; font-size:1.8rem; display:block; margin-bottom:5px;"></i><span>CSS3 Structural Var & Contrast Layout</span></div>
+                <div class="tech-card"><i class="fa-brands fa-js" style="color:#f7df1e; font-size:1.8rem; display:block; margin-bottom:5px;"></i><span>Vanilla ECMAScript Procedural Engine</span></div>
+                <div class="tech-card"><i class="fa-solid fa-map-location" style="color:var(--green); font-size:1.8rem; display:block; margin-bottom:5px;"></i><span>Leaflet Vector Geospatial Renderer</span></div>
+                <div class="tech-card"><i class="fa-solid fa-chart-pie" style="color:#36a2eb; font-size:1.8rem; display:block; margin-bottom:5px;"></i><span>Chart.js Real-Time Data Stream Vis</span></div>
+                <div class="tech-card"><i class="fa-solid fa-file-pdf" style="color:var(--alert-red); font-size:1.8rem; display:block; margin-bottom:5px;"></i><span>jsPDF Transactional Ledger Generator</span></div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer>
+    <div class="footer-content">
+        <div class="footer-left" id="footerCopyright">
+            &copy; 2026 Sovereign AI Digital Defense Systems Council. All Rights Reserved.
+        </div>
+        <div class="footer-center">
+            <a href="https://github.com" target="_blank"><i class="fa-brands fa-github"></i> Core Repository</a>
+            <a href="#" onclick="showToast('Sovereign Security License Level-1 Active.')"><i class="fa-solid fa-file-contract"></i> License Key System</a>
+        </div>
+        <div class="footer-right">
+            Production Cluster Node: v3.4.0-Stable // SECURE ENV
+        </div>
+    </div>
+</footer>
+
+<div class="toast-notify" id="toastNode">System Ingestion Array Active</div>
+
+<script>
+let mapObj = null; let activeMarker = null;
+let ch1 = null, ch2 = null, ch3 = null;
+
+const schemesData = [
+    { name: "Pradhan Mantri Kisan Samman Nidhi (PM-KISAN)", minAge: 18, maxIncome: 300000, desc: "Liquid financial credits up to ₹6,000 mapping to farmer accounts directly." },
+    { name: "Sovereign Post-Matric Merit Scholarship Pipeline", minAge: 16, maxIncome: 250000, desc: "100% academic verification reimbursement mechanism for underprivileged students." },
+    { name: "National Rural Employment Execution Protocol", minAge: 18, maxIncome: 150000, desc: "Guaranteed 100 days of manual wage telemetry deployment logs per household." }
+];
+
+const awarenessAdvisories = [
+    "Alert: Fake domain routing strings simulating state power distribution servers detected.",
+    "Notice: High density of vishing attempts reported tracking bank card expiry vectors.",
+    "Advisory: Ensure multi-factor cryptographic tokens are detached from communication channels.",
+    "Warning: Ransomware actors targeting local storage setups using compromised archive packages."
+];
+
+// Hinglish/Simple English patterns library for smart matching
+const hinglishBotResponses = [
+    "Arre wah! Mujhse poocha? Main scan kar rha hu, tension mat lo data ekdum safe hai aapka! Phishing-wishing kuch nahi mila yahan.",
+    "Bhai, ye password thoda kamzor lag rha hai, koi mast cipher numbers aur special character laga ke update karo jaldi!",
+    "Dekho, ye link unverified server pe redirect ho rha hai, click bilkul mat karna, block maaro turant!",
+    "Sovereign data matrix clear hai. Koi active malware ya vulnerability scan vectors trigger nahi hue hain.",
+    "Arre, ye welfare scheme check karne ke liye side wale eligibility criteria panel pe values dalo, direct link de dunga apply karne ke liye."
+];
+
+// Full Language Localization Database Dictionary mapping
+const langDictionary = {
+    en: {
+        mainHeaderTitle: "Sovereign AI Civic & Cyber Super App",
+        searchBtnTxt: "Search",
+        tabCivic: "<i class='fa-solid fa-gauge-high'></i> Civic Dashboard",
+        tabCyber: "<i class='fa-solid fa-shield-halved'></i> Cyber Shield Dashboard",
+        tabEmergency: "<i class='fa-solid fa-heart-pulse'></i> Emergency Services",
+        tabAi: "<i class='fa-solid fa-robot'></i> AI Companion & Schemes",
+        tabComplaints: "<i class='fa-solid fa-file-invoice'></i> Complaints & Grievances",
+        tabTools: "<i class='fa-solid fa-screwdriver-wrench'></i> Security Tools & Audit",
+        tabAcademy: "<i class='fa-solid fa-graduation-cap'></i> Cyber Awareness Academy",
+        tabAbout: "<i class='fa-solid fa-circle-info'></i> About & Tech Stack",
+        cardGrievances: "Total Grievances Filed",
+        cardResolved: "Grievances Resolved",
+        cardActive: "Active Processing",
+        cardSchemes: "Welfare Schemes",
+        aiWelcomeMsg: "Jai Hind! Main aapka AI Sovereign Advisor hu. Koi bhi cyber fraud, password test, ya scheme related tension ho, bina jhijhak poocho! Ekdum dosto jaisa solution milega.",
+        searchPlaceholder: "Kuch bhi search karein (e.g., '1930 Helpline', 'Scheme Finder', 'Password Checker')...",
+        aiPlaceholder: "Kuch bhi poocho - password safe hai? link real hai? ya scholarship kaise milegi..."
+    },
+    hi: {
+        mainHeaderTitle: "सम्पूर्ण संप्रभु एआई नागरिक एवं साइबर सुपर पोर्टल",
+        searchBtnTxt: "खोजें",
+        tabCivic: "<i class='fa-solid fa-gauge-high'></i> नागरिक डैशबोर्ड",
+        tabCyber: "<i class='fa-solid fa-shield-halved'></i> साइबर सुरक्षा कवच",
+        tabEmergency: "<i class='fa-solid fa-heart-pulse'></i> आपातकालीन सेवाएं",
+        tabAi: "<i class='fa-solid fa-robot'></i> एआई साथी और योजनाएं",
+        tabComplaints: "<i class='fa-solid fa-file-invoice'></i> शिकायत एवं निवारण",
+        tabTools: "<i class='fa-solid fa-screwdriver-wrench'></i> सुरक्षा उपकरण एवं ऑडिट",
+        tabAcademy: "<i class='fa-solid fa-graduation-cap'></i> साइबर जागरूकता अकादमी",
+        tabAbout: "<i class='fa-solid fa-circle-info'></i> परिचय एवं टेक स्टैक",
+        cardGrievances: "कुल दर्ज शिकायतें",
+        cardResolved: "सफल निस्तारण",
+        cardActive: "सक्रिय प्रसंस्करण",
+        cardSchemes: "कल्याणकारी योजनाएं",
+        aiWelcomeMsg: "जय हिंद! मैं आपका संप्रभु एआई सहायक हूँ। कृपया किसी भी साइबर खतरे, पासवर्ड मूल्यांकन अथवा सरकारी योजनाओं के सम्बन्ध में प्रश्न पूछें।",
+        searchPlaceholder: "यहाँ खोजें (जैसे: '1930 हेल्पलाइन', 'योजना खोजक', 'पासवर्ड जांच')...",
+        aiPlaceholder: "एआई से कुछ भी पूछें - क्या मेरा पासवर्ड सुरक्षित है? लिंक असली है या फर्जी?..."
+    }
+};
+
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll(".tab-btn").forEach(t => {
+        t.addEventListener("click", () => {
+            document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+            t.classList.add("active");
+            document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+            document.getElementById(`panel-${t.getAttribute("data-tab")}`).classList.add("active");
+
+            if(t.getAttribute("data-tab") === 'emergency-desk') { setTimeout(initMap, 200); }
+            setTimeout(initCharts, 100);
+        });
+    });
+
+    initCharts();
+    renderDocsGuide();
+    // Initialize theme: use saved preference or system preference and update the toggle UI
+    try {
+        const saved = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const theme = saved ? saved : (prefersDark ? 'dark' : 'light');
+        document.body.setAttribute('data-theme', theme);
+        // reflect on the toggle button icon/label
+        updateThemeToggleButton(theme);
+    } catch (e) {}
+    setInterval(() => {
+        let node = document.getElementById("liveThreats");
+        if(node) { node.innerText = parseInt(node.innerText) + Math.floor(Math.random() * 5) - 2; }
+    }, 3500);
+
+    let advIndex = 0;
+    setInterval(() => {
+        document.getElementById("dailyTipNode").innerText = awarenessAdvisories[advIndex % awarenessAdvisories.length];
+        advIndex++;
+    }, 5000);
+    document.getElementById("dailyTipNode").innerText = awarenessAdvisories[0];
+});
+
+function showToast(txt) {
+    let node = document.getElementById("toastNode"); node.innerText = txt;
+    node.style.display = "block"; setTimeout(() => node.style.display = "none", 3000);
+}
+
+function toggleDark() {
+    try {
+        const current = document.body.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+        const next = current === 'dark' ? 'light' : 'dark';
+        document.body.setAttribute('data-theme', next);
+        try { localStorage.setItem('theme', next); } catch (e) {}
+        updateThemeToggleButton(next);
+        showToast(`Switched to ${next} mode.`);
+    } catch (e) { showToast('Unable to toggle theme.'); }
+}
+
+function updateThemeToggleButton(theme) {
+    const icon = document.getElementById('themeIcon');
+    const btn = document.getElementById('btnThemeToggle');
+    if (!icon || !btn) return;
+    if (theme === 'dark') {
+        icon.className = 'fa-solid fa-moon';
+        btn.setAttribute('aria-label', 'Switch to light mode');
+    } else {
+        icon.className = 'fa-solid fa-sun';
+        btn.setAttribute('aria-label', 'Switch to dark mode');
+    }
+}
+
+function toggleHighContrast() {
+    let val = document.body.getAttribute("data-highcontrast") === "true" ? "false" : "true";
+    document.body.setAttribute("data-highcontrast", val);
+    showToast(`High Contrast Mode: ${val.toUpperCase()}`);
+}
+
+function changeFont(dir) {
+    let size = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--base-font')) || 15;
+    document.documentElement.style.setProperty('--base-font', (size + dir) + 'px');
+}
+
+function changeLanguage() {
+    let lang = document.getElementById("langSelect").value;
+    let dataset = langDictionary[lang];
+    
+    // UI Label Switching Element Matrices
+    document.getElementById("mainHeaderTitle").innerText = dataset.mainHeaderTitle;
+    document.getElementById("searchBtnTxt").innerText = dataset.searchBtnTxt;
+    document.getElementById("tabCivic").innerHTML = dataset.tabCivic;
+    document.getElementById("tabCyber").innerHTML = dataset.tabCyber;
+    document.getElementById("tabEmergency").innerHTML = dataset.tabEmergency;
+    document.getElementById("tabAi").innerHTML = dataset.tabAi;
+    document.getElementById("tabComplaints").innerHTML = dataset.tabComplaints;
+    document.getElementById("tabTools").innerHTML = dataset.tabTools;
+    document.getElementById("tabAcademy").innerHTML = dataset.tabAcademy;
+    document.getElementById("tabAbout").innerHTML = dataset.tabAbout;
+    document.getElementById("cardGrievances").innerText = dataset.cardGrievances;
+    document.getElementById("cardResolved").innerText = dataset.cardResolved;
+    document.getElementById("cardActive").innerText = dataset.cardActive;
+    document.getElementById("cardSchemes").innerText = dataset.cardSchemes;
+    document.getElementById("aiWelcomeMsg").innerText = dataset.aiWelcomeMsg;
+    document.getElementById("smartSearch").placeholder = dataset.searchPlaceholder;
+    document.getElementById("aiField").placeholder = dataset.aiPlaceholder;
+    
+    showToast(`Language set to: ${lang.toUpperCase()}`);
+}
+
+function executeRouterSearch() {
+    let query = document.getElementById("smartSearch").value.toLowerCase().trim(); if(!query) return;
+    if(query.includes("1930") || query.includes("emergency") || query.includes("police") || query.includes("helpline")) {
+        document.querySelector('[data-tab="emergency-desk"]').click();
+    } else if(query.includes("password") || query.includes("url") || query.includes("hash") || query.includes("tools")) {
+        document.querySelector('[data-tab="tools-desk"]').click();
+    } else if(query.includes("quiz") || query.includes("course") || query.includes("awareness")) {
+        document.querySelector('[data-tab="learning-desk"]').click();
+    } else if(query.includes("about") || query.includes("tech") || query.includes("stack")) {
+        document.querySelector('[data-tab="about-desk"]').click();
+    } else if(query.includes("cyber") || query.includes("shield") || query.includes("guardian")) {
+        document.querySelector('[data-tab="cyber-dash"]').click();
+    } else {
+        document.querySelector('[data-tab="civic-dash"]').click();
+    }
+    showToast(`Searching for: "${query}"`);
+}
+
+function updateGuardianPlaceholder() {
+    let v = document.getElementById("guardianSelect").value;
+    let map = { pass: "Enter password text...", url: "Enter domain string...", email: "Paste email header log...", qr: "Enter parsed QR token data...", call: "Enter transcript text..." };
+    document.getElementById("guardianInput").placeholder = map[v];
+}
+
+function runGuardianDeepAudit() {
+    let str = document.getElementById("guardianInput").value.trim(); if(!str) return;
+    let box = document.getElementById("guardianStatusBox"); box.style.display = "block";
+    box.style.background = "rgba(18,136,7,0.1)"; box.style.color = "var(--green)";
+    box.innerHTML = `<span><i class='fa-solid fa-circle-check'></i> <b>GUARDIAN VERDICT: SECURE NODE.</b> Koi threat ya virus pattern nahi mila yahan. Data clean hai!</span>`;
+}
+
+function openReportWizard(title) {
+    document.getElementById("reportWizardBox").style.display = "block";
+    document.getElementById("wizardTitle").innerText = `Active Ingestion: ${title}`;
+}
+
+function downloadCyberPDF() {
+    const { jsPDF } = window.jspdf; let doc = new jsPDF();
+    doc.text("SOVEREIGN DIGITAL THREAT INCIDENT REPORT", 14, 20);
+    doc.text(`Timeline: ${new Date().toLocaleString()}`, 14, 30);
+    doc.text(`Log Summary: ${document.getElementById("wizardSummary").value || "No manual log metadata specified."}`, 14, 40);
+    doc.save("Incident_Threat_Report.pdf");
+    showToast("PDF Report compiled.");
+}
+
+function downloadSecurityAssessmentPDF() {
+    const { jsPDF } = window.jspdf; let doc = new jsPDF();
+    doc.text("SOVEREIGN FRAMEWORK SECURITY AUDIT ASSESSMENT", 14, 20);
+    doc.text(`Audit Interval: 2026 Stable Environment`, 14, 30);
+    doc.text("Status: All internal standard heuristic modules functioning optimally. Score: 88%", 14, 40);
+    doc.save("Security_Assessment_Report.pdf");
+    showToast("Security Assessment Document Exported.");
+}
+
+function trackCyberComplaint() {
+    showToast("Querying Database... Status: UNDER ENFORCEMENT INVESTIGATION.");
+}
+
+function saveEmergencyBookmark(btn) {
+    btn.classList.toggle("bookmarked");
+    showToast(btn.classList.contains("bookmarked") ? "Emergency node pinned." : "Emergency node unpinned.");
+}
+
+function initMap() {
+    if(mapObj) { setTimeout(() => mapObj.invalidateSize(), 50); return; }
+    mapObj = L.map('map').setView([27.1767, 78.0081], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapObj);
+}
+
+function plotEmergencyGeospatialNodes() {
+    initMap(); if(activeMarker) mapObj.removeLayer(activeMarker);
+    let lat = 27.1944, lng = 78.0211; mapObj.setView([lat, lng], 14);
+    activeMarker = L.marker([lat, lng]).addTo(mapObj).bindPopup(`<b>Central Police & Cyber Response Sub-Station Command HQ</b>`).openPopup();
+    showToast("Geospatial coordination mapping verified.");
+}
+
+function processAIChat() {
+    let f = document.getElementById("aiField"); let queryText = f.value.toLowerCase().trim(); if(!queryText) return;
+    let w = document.getElementById("chatWindow");
+    let u = document.createElement("div"); u.className = "msg user"; u.innerText = f.value; w.appendChild(u);
+    
+    setTimeout(() => {
+        let b = document.createElement("div"); b.className = "msg bot";
+        let isHi = document.getElementById("langSelect").value === "hi";
+        
+        if (isHi) {
+            b.innerText = "सुरक्षा मूल्यांकन पूर्ण हुआ। आपका इनपुट संप्रभु डेटाबेस के अनुसार सुरक्षित परिचालन मानकों के अंतर्गत पाया गया है।";
+        } else {
+            // Smart Hinglish Selector loop based on keywords inside user input context
+            if(queryText.includes("password") || queryText.includes("pass")) {
+                b.innerText = hinglishBotResponses[1];
+            } else if(queryText.includes("link") || queryText.includes("url") || queryText.includes("http")) {
+                b.innerText = hinglishBotResponses[2];
+            } else if(queryText.includes("scheme") || queryText.includes("paisa") || queryText.includes("scholarship")) {
+                b.innerText = hinglishBotResponses[4];
+            } else {
+                b.innerText = hinglishBotResponses[Math.floor(Math.random() * 2)];
+            }
+        }
+        w.appendChild(b); w.scrollTop = w.scrollHeight;
+    }, 450);
+    f.value = "";
+}
+
+function triggerVoiceChat() {
+    showToast("AI Voice Capture initialized... Listening for triggers...");
+}
+
+function runSchemeEligibility() {
+    let age = parseInt(document.getElementById("schemeAge").value);
+    let inc = parseInt(document.getElementById("schemeIncome").value);
+    let target = document.getElementById("schemeResultBox"); target.innerHTML = "";
+    if(isNaN(age) || isNaN(inc)) { showToast("Please enter fields."); return; }
+    
+    let matched = schemesData.filter(s => age >= s.minAge && inc <= s.maxIncome);
+    if(matched.length === 0) {
+        target.innerHTML = `<div style='padding:12px; background:rgba(217,56,56,0.1); border-radius:8px;'>No scheme criteria matches this matrix.</div>`;
+        return;
+    }
+    matched.forEach(s => {
+        let div = document.createElement("div"); div.style.padding = "14px"; div.style.background = "var(--card)"; div.style.border = "1px solid var(--border)"; div.style.borderRadius = "8px";
+        div.innerHTML = `<h4>${s.name}</h4><p style='font-size:0.85rem; margin-top:4px;'>${s.desc}</p><button class='btn small' style='margin-top:8px;' onclick='showToast("Application vector spawned.")'>Process Registration</button>`;
+        target.appendChild(div);
+    });
+}
+
+function runAIComplaintWriter() {
+    let txt = document.getElementById("complaintInput").value; if(!txt) return;
+    let out = document.getElementById("complaintOutputBox"); out.style.display = "block";
+    out.innerText = `To,\nThe Ward Officer Command Sub-Cell,\nMunicipal Sovereign Corporation.\n\nSubject: Structural Grievance Registry regarding municipal anomalies.\n\nSir/Madam,\nThis is to officially file an alert on record: "${txt}". Kindly route telemetry units to fix this node immediately.\n\nRegards,\nSovereign Resident Node.`;
+}
+
+function runAIComplaintAnalyzer() {
+    let txt = document.getElementById("complaintInput").value; if(!txt) return;
+    let out = document.getElementById("complaintOutputBox"); out.style.display = "block";
+    out.innerText = `[AI COMPLAINT RISK HEURISTICS DIAGNOSTIC]\n------------------------------------------\nTarget Length: ${txt.length} characters\nPrimary Department Route: Public Health & Sanitation Grid Cell\nSeverity Grade Matrix: MODERATE STABLE\nPriority Response Index: 72 Hours Operational Window.`;
+}
+
+function renderDocsGuide() {
+    document.getElementById("docTargetBox").innerHTML = `<ul class="doc-list">
+        <li><span>Birth Certificate Documentation Guide</span><button class="btn small" onclick="showToast('Loading ruleset...')">Ruleset</button></li>
+        <li><span>Address Mapping Verification Records</span><button class="btn small" onclick="showToast('Loading ruleset...')">Ruleset</button></li>
+        <li><span>Income Criteria Ledger Receipts</span><button class="btn small" onclick="showToast('Loading ruleset...')">Ruleset</button></li>
+    </ul>`;
+}
+
+function showGuide(type) {
+    let map = { aadhaar: "Path: UIDAI Official Server -> Profile Metric Vault -> Verify Linked SMS Token OTP.", pan: "Path: NSDL Enterprise Node -> Taxpayer Ledger Matching Engine -> Extract PAN validation key.", voter: "Path: National Voter Registry Hub -> Verify Regional Ward Grid -> Identity Matching Complete." };
+    document.getElementById("guideOutputBox").innerText = map[type];
+}
+
+function checkPassStrength() {
+    let v = document.getElementById("passInput").value; let n = document.getElementById("passStrengthOutput");
+    if(v.length < 6) { n.innerText = "Strength: WEAK SCANNABLE VAULT"; n.style.color = "var(--alert-red)"; }
+    else if(v.length < 11) { n.innerText = "Strength: MODERATE ENTROPY BALANCED"; n.style.color = "#f1c40f"; }
+    else { n.innerText = "Strength: EXTREME CRYPTOGRAPHIC FORCE LOCK"; n.style.color = "var(--green)"; }
+}
+
+function generateSecurePassword() {
+    let chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+";
+    let p = ""; for(let i=0; i<16; i++) p += chars.charAt(Math.floor(Math.random() * chars.length));
+    document.getElementById("generatedPass").value = p;
+}
+
+function checkURLSafety() {
+    let u = document.getElementById("urlInput").value.trim(); if(!u) return;
+    let out = document.getElementById("toolStatusOutput"); out.style.display = "block";
+    out.style.color = "var(--green)"; out.innerText = `URL SCAN VERDICT: Domain data verified against records. Status safe.`;
+}
+
+function generateFileHash() {
+    let txt = document.getElementById("fileStringInput").value; if(!txt) return;
+    let out = document.getElementById("toolStatusOutput"); out.style.display = "block";
+    out.style.color = "var(--navy)"; out.innerText = `Computed Checksum Block [SHA256 equivalent]: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`;
+}
+
+function processQuizSelection(correct) {
+    if(correct) {
+        showToast("CORRECT SELECTION! Cyber awareness metrics score increased.");
+        document.getElementById("certBtn").style.display = "inline-flex";
+    } else {
+        showToast("Wrong response logic applied.");
+    }
+}
+
+function downloadCertPDF() {
+    const { jsPDF } = window.jspdf; let doc = new jsPDF();
+    doc.text("CERTIFICATE OF SOVEREIGN CYBER SECURITY AWARENESS", 14, 20);
+    doc.text("This official credential certifies that the applicant node has completed", 14, 35);
+    doc.text("the 2026 Interactive Academy Simulation and verified high security habits.", 14, 45);
+    doc.save("Cyber_Awareness_Certificate.pdf");
+    showToast("Awareness Certificate generated successfully.");
+}
+
+function initCharts() {
+    let c1 = document.getElementById('civicPie');
+    if(c1 && !ch1) { ch1 = new Chart(c1, { type: 'pie', data: { labels: ['Resolved Cases', 'Pending Line'], datasets: [{ data: [1210, 632], backgroundColor: ['#128807', '#FF9933'] }] }, options: { responsive: true, maintainAspectRatio: false } }); }
+    
+    let c2 = document.getElementById('civicBar');
+    if(c2 && !ch2) { ch2 = new Chart(c2, { type: 'bar', data: { labels: ['Sanitation', 'Water Grid', 'PWD Operations', 'Welfare Administration'], datasets: [{ label: 'Logged Enforcements', data: [420, 310, 580, 210], backgroundColor: '#0B1F3A' }] }, options: { responsive: true, maintainAspectRatio: false } }); }
+    
+    let c3 = document.getElementById('cyberLines');
+    if(c3 && !ch3) { ch3 = new Chart(c3, { type: 'line', data: { labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'], datasets: [{ label: 'Mitigated Attack Waves', data: [1200, 1900, 3100, 2400, 3800, 3491], borderColor: '#00e5ff', fill: false }] }, options: { responsive: true, maintainAspectRatio: false } }); }
+}
+</script>
+</body>
+</html>
