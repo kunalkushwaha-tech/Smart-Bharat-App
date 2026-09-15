@@ -4,6 +4,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 import VisitorCounter from "./components/VisitorCounter";
+import PanicMode from "./components/PanicMode";
 
 
 type Theme = "light" | "dark";
@@ -617,6 +618,7 @@ Apply: ${scheme.applyUrl}`,
           }`}
         >
           <h2 className="mb-4 text-2xl font-bold">Emergency Services</h2>
+          <PanicMode />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {emergencyContacts.map((item) => (
               <div
