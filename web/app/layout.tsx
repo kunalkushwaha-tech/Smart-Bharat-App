@@ -13,8 +13,22 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
   title: "Bharat App - Civic & Cyber Dashboard",
   description: "Sovereign AI civic services, cyber safety, complaints, and awareness dashboard.",
+  manifest: "/manifest.json",
+  openGraph: {
+    title: "Bharat App - Civic & Cyber Dashboard",
+    description: "One Platform for Cyber Safety & Citizen Services",
+    type: "website",
+    images: [{ url: "/og-image.svg", width: 1200, height: 630, alt: "Bharat App - Cyber Safety and Citizen Services" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Bharat App - Civic & Cyber Dashboard",
+    description: "One Platform for Cyber Safety & Citizen Services",
+    images: ["/og-image.svg"],
+  },
 };
 
 export default function RootLayout({

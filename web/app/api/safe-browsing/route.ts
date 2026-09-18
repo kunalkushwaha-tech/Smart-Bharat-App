@@ -2,17 +2,26 @@ import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
   try {
-    const { url } = await req.json();
-    if (!url) return NextResponse.json({ error: 'Missing url' }, { status: 400 });
+    const input = await req.json();
+    const url = typeof input.url === "string" ? input.url.trim() : "";
+    let parsedUrl: URL;
+    try {
+      parsedUrl = new URL(url);
+    } catch {
+      return NextResponse.json({ error: 'Invalid URL' }, { status: 400 });
+    }
+    if (url.length > 2048 || !["http:", "https:"].includes(parsedUrl.protocol)) {
+      return NextResponse.json({ error: 'Invalid URL' }, { status: 400 });
+    }
 
     const key = process.env.GOOGLE_SAFE_BROWSING_API_KEY;
     if (!key) {
-      return NextResponse.json({ error: 'GOOGLE_SAFE_BROWSING_API_KEY not configured on server' }, { status: 400 });
+      return NextResponse.json({ error: 'Safe Browsing is not configured' }, { status: 503 });
     }
 
     const endpoint = `https://safebrowsing.googleapis.com/v4/threatMatches:find?key=${encodeURIComponent(key)}`;
 
-    const body = {
+    const requestBody = {
       client: {
         clientId: 'smart-bharat',
         clientVersion: '1.0',
@@ -28,18 +37,19 @@ export async function POST(req: Request) {
     const res = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+      body: JSON.stringify(requestBody),
     });
 
     if (!res.ok) {
-      const text = await res.text();
-      return NextResponse.json({ error: 'Safe Browsing API error', status: res.status, detail: text }, { status: 500 });
+      console.error("Safe Browsing provider failed", res.status);
+      return NextResponse.json({ error: 'Something went wrong, please try again' }, { status: 502 });
     }
 
     const json = await res.json();
     // The API returns { matches: [...] } if threats found, otherwise {}
     return NextResponse.json({ ok: true, matches: json.matches ?? null });
-  } catch (err: any) {
-    return NextResponse.json({ error: String(err?.message ?? err) }, { status: 500 });
+  } catch (error) {
+    console.error("Safe Browsing request failed", error);
+    return NextResponse.json({ error: 'Something went wrong, please try again' }, { status: 500 });
   }
 }

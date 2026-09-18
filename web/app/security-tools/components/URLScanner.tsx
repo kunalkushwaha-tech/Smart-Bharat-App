@@ -2,6 +2,10 @@
 
 import { useState } from 'react';
 import { runUrlSafetyScan, type UrlScanSummary } from './urlSafety';
+import { updateCyberHygieneResults } from './cyberHygieneStorage';
+import ToolFeedback from './ToolFeedback';
+import RecentChecks from './RecentChecks';
+import { addToolHistory } from './toolActivity';
 
 export default function URLScanner() {
   const [url, setUrl] = useState('');
@@ -22,6 +26,15 @@ export default function URLScanner() {
     try {
       const summary = await runUrlSafetyScan(u);
       setResult(summary);
+      const safeBrowsing = summary.safeBrowsing as { matches?: unknown[] } | null;
+      updateCyberHygieneResults({
+        url: {
+          flags: summary.heuristics.length,
+          threatFound: Array.isArray(safeBrowsing?.matches) && safeBrowsing.matches.length > 0,
+          checked: true,
+        },
+      });
+      addToolHistory('url', { summary: summary.heuristics.length ? `${summary.heuristics.length} heuristic flag(s)` : 'No heuristic flags', detail: summary.parsedUrl });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
@@ -75,6 +88,8 @@ export default function URLScanner() {
       <div className="mt-3 text-sm text-[#C8D5EA]">
         Note: Safe Browsing requires a server-side API key. If no key is configured, the server will return an explanatory message and heuristics above still apply.
       </div>
+      <ToolFeedback toolId="url" />
+      <RecentChecks toolId="url" />
     </div>
   );
 }

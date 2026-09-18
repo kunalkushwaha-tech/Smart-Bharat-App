@@ -1,6 +1,10 @@
 "use client";
 
 import React, { useState } from 'react';
+import { updateCyberHygieneResults } from '../security-tools/components/cyberHygieneStorage';
+import ToolFeedback from '../security-tools/components/ToolFeedback';
+import RecentChecks from '../security-tools/components/RecentChecks';
+import { addToolHistory } from '../security-tools/components/toolActivity';
 
 const DataBreachTimeline = () => {
   const [email, setEmail] = useState('');
@@ -29,8 +33,12 @@ const DataBreachTimeline = () => {
         setMessage(data.error || 'Kuch galat ho gaya.');
       } else if (data.breaches.length === 0) {
         setMessage('Achi khabar! Koi breach nahi mila.');
+        updateCyberHygieneResults({ breach: { found: false, checked: true } });
+        addToolHistory('breach', { summary: 'No breaches found', detail: email });
       } else {
         setBreaches(data.breaches);
+        updateCyberHygieneResults({ breach: { found: true, checked: true } });
+        addToolHistory('breach', { summary: `${data.breaches.length} breach(es) found`, detail: email });
       }
     } catch (err) {
       setMessage('Network error, dobara try karo.');
@@ -76,6 +84,8 @@ const DataBreachTimeline = () => {
           </ul>
         </div>
       )}
+      <ToolFeedback toolId="breach" />
+      <RecentChecks toolId="breach" />
     </div>
   );
 };

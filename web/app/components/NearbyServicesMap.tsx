@@ -147,13 +147,13 @@ export default function NearbyServicesMap({ isDark }: NearbyServicesMapProps) {
           />
 
           {userLocation ? (
-            <Marker position={userLocation} icon={iconByType.user}>
+            <Marker position={userLocation} icon={iconByType.user} alt="Your current location">
               <Popup>Your current location</Popup>
             </Marker>
           ) : null}
 
           {nearbyServices.map((service) => (
-            <Marker key={service.id} position={service.position} icon={iconByType[service.type]}>
+          <Marker key={service.id} position={service.position} icon={iconByType[service.type]} alt={service.label}>
               <Popup>{service.label}</Popup>
             </Marker>
           ))}

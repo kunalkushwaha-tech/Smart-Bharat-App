@@ -4,6 +4,10 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 import VisitorCounter from "./components/VisitorCounter";
+import IceCard from "./components/IceCard";
+import PanicMode from "./components/PanicMode";
+import CommunityScamAlerts from "./components/CommunityScamAlerts";
+import EmergencyErrorBoundary from "./components/EmergencyErrorBoundary";
 
 
 type Theme = "light" | "dark";
@@ -181,6 +185,7 @@ export default function Home() {
   const isDark = theme === "dark";
 
   const [activeTab, setActiveTab] = useState<TabId>("emergency");
+  const [panicShortcut, setPanicShortcut] = useState(false);
 
   const [chatInput, setChatInput] = useState("");
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
@@ -210,6 +215,14 @@ export default function Home() {
   useEffect(() => {
     localStorage.setItem("theme", theme);
   }, [theme]);
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("panic") !== "true") return;
+    setPanicShortcut(true);
+    window.setTimeout(() => {
+      document.getElementById("panic-mode")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 0);
+  }, []);
 
   useEffect(() => {
     const tabs: TabId[] = ["emergency", "ai", "complaints", "security", "academy"];
@@ -521,7 +534,8 @@ Apply: ${scheme.applyUrl}`,
         isDark ? "bg-[#050B14] text-[#ECF2FA]" : "bg-[#F4F7FC] text-[#111E30]"
       }`}
     >
-      <div className="h-[6px] w-full bg-[linear-gradient(90deg,#FF9933_0%,#FF9933_33%,#fff_33%,#fff_66%,#128807_66%)]" />
+      <a href="#main-content" className="skip-link">Skip to main content</a>
+      <div className="h-[6px] w-full bg-[linear-gradient(90deg,#FF9933_0%,#FF9933_33%,#fff_33%,#fff_66%,#128807_66%)]" aria-hidden="true" />
 
       <header
         className={`sticky top-0 z-50 border-b px-5 py-4 shadow-sm md:px-8 ${
@@ -559,7 +573,7 @@ Apply: ${scheme.applyUrl}`,
             }}
             className={getTabClass("emergency", "emergency")}
           >
-            <i className="fa-solid fa-heart-pulse" />
+            <i className="fa-solid fa-heart-pulse" aria-hidden="true" />
             Emergency Services
           </a>
           <a
@@ -570,7 +584,7 @@ Apply: ${scheme.applyUrl}`,
             }}
             className={getTabClass("ai")}
           >
-            <i className="fa-solid fa-robot" />
+            <i className="fa-solid fa-robot" aria-hidden="true" />
             AI Companion & Schemes
           </a>
           <a
@@ -581,7 +595,7 @@ Apply: ${scheme.applyUrl}`,
             }}
             className={getTabClass("complaints")}
           >
-            <i className="fa-solid fa-file-invoice" />
+            <i className="fa-solid fa-file-invoice" aria-hidden="true" />
             Complaints & Grievances
           </a>
           <a
@@ -592,7 +606,7 @@ Apply: ${scheme.applyUrl}`,
             }}
             className={getTabClass("security", "security")}
           >
-            <i className="fa-solid fa-screwdriver-wrench" />
+            <i className="fa-solid fa-screwdriver-wrench" aria-hidden="true" />
             Security Tools & Audit
           </a>
           <a
@@ -603,46 +617,50 @@ Apply: ${scheme.applyUrl}`,
             }}
             className={getTabClass("academy")}
           >
-            <i className="fa-solid fa-graduation-cap" />
+            <i className="fa-solid fa-graduation-cap" aria-hidden="true" />
             Cyber Awareness Academy
           </a>
         </div>
       </nav>
 
-      <main className="mx-auto w-full max-w-6xl space-y-8 px-5 py-8 md:px-8">
-        <section
-          id="emergency"
-          className={`rounded-2xl border p-6 ${
-            isDark ? "border-white/10 bg-[#0A1424]" : "border-[#0B1F3A]/10 bg-white"
-          }`}
-        >
-          <h2 className="mb-4 text-2xl font-bold">Emergency Services</h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {emergencyContacts.map((item) => (
-              <div
-                key={item.number}
-                className={`hover-lift rounded-xl border p-4 ${
-                  isDark ? "border-white/10 bg-[#122A4D]" : "border-[#0B1F3A]/10 bg-[#F9FBFF]"
-                }`}
-              >
-                <p className="text-3xl font-extrabold text-[#FF9933]">{item.number}</p>
-                <p className="mt-1 text-sm">{item.label}</p>
-                <a href={`tel:${item.number}`} className="mt-3 inline-block bg-red-600 text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-red-700">Call Now</a>
-                {item.websiteUrl ? (
-                  <a
-                    href={item.websiteUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-2 inline-flex text-xs font-semibold text-[#FF9933] underline"
-                  >
-                    Official: {item.websiteLabel}
-                  </a>
-                ) : null}
-              </div>
-            ))}
-          </div>
-          <NearbyServicesMap isDark={isDark} />
-        </section>
+      <main id="main-content" tabIndex={-1} className="mx-auto w-full max-w-6xl space-y-8 px-5 py-8 md:px-8">
+        <EmergencyErrorBoundary>
+          <section
+            id="emergency"
+            className={`rounded-2xl border p-6 ${
+              isDark ? "border-white/10 bg-[#0A1424]" : "border-[#0B1F3A]/10 bg-white"
+            }`}
+          >
+            <h2 className="mb-4 text-2xl font-bold">Emergency Services</h2>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {emergencyContacts.map((item) => (
+                <div
+                  key={item.number}
+                  className={`hover-lift rounded-xl border p-4 ${
+                    isDark ? "border-white/10 bg-[#122A4D]" : "border-[#0B1F3A]/10 bg-[#F9FBFF]"
+                  }`}
+                >
+                  <p className="text-3xl font-extrabold text-[#FF9933]">{item.number}</p>
+                  <p className="mt-1 text-sm">{item.label}</p>
+                  <a aria-label={`Call ${item.label} at ${item.number}`} href={`tel:${item.number}`} className="mt-3 inline-block bg-red-600 text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-red-700">Call Now</a>
+                  {item.websiteUrl ? (
+                    <a
+                      href={item.websiteUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-2 inline-flex text-xs font-semibold text-[#FF9933] underline"
+                    >
+                      Official: {item.websiteLabel}
+                    </a>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+            <IceCard />
+            <PanicMode focusRequested={panicShortcut} />
+            <NearbyServicesMap isDark={isDark} />
+          </section>
+        </EmergencyErrorBoundary>
 
         <section
           id="ai"
@@ -915,6 +933,7 @@ Apply: ${scheme.applyUrl}`,
           }`}
         >
           <h2 className="mb-4 text-2xl font-bold">Cyber Awareness Academy</h2>
+          <CommunityScamAlerts />
           <p className="mb-4 text-sm">
             Question {quizIndex + 1} of {academyQuizQuestions.length} | Score: {quizScore}
           </p>
@@ -960,7 +979,8 @@ Apply: ${scheme.applyUrl}`,
       <footer className="mt-16 py-8 border-t border-gray-700 text-center text-gray-400">
   <div className="flex justify-center gap-6 mb-3">
     <a href="#" className="hover:text-white">About</a>
-    <a href="#" className="hover:text-white">Privacy Policy</a>
+    <a href="/privacy" className="hover:text-white">Privacy Policy</a>
+    <a href="/terms" className="hover:text-white">Terms</a>
     <a href="https://github.com/kunalkushwaha-tech" target="_blank" className="hover:text-white">GitHub</a>
     <a href="tel:+918126748461" className="hover:text-white">Contact</a>
   </div>
