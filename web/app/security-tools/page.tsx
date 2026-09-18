@@ -12,6 +12,7 @@ import DigitalFootprintChecker from '../components/DigitalFootprintChecker';
 import RansomwareGuide from '../components/RansomwareGuide';
 import SafeShoppingChecklist from '../components/SafeShoppingChecklist';
 import SocialMediaPrivacyGuide from '../components/SocialMediaPrivacyGuide';
+import SecurityIntelTools from './components/SecurityIntelTools';
 export const metadata = {
   title: 'Security Tools & Audit - Smart Bharat',
 };
@@ -20,6 +21,11 @@ export default function SecurityToolsPage() {
   return (
     <main className="max-w-4xl mx-auto p-6">
       <h1 className="text-3xl font-bold mb-4">Security Tools & Audit</h1>
+
+      <section className="mb-8">
+        <p className="mb-4 text-gray-600">Check suspicious messages, phone numbers, IPs/domains, and domain registration details.</p>
+        <SecurityIntelTools />
+      </section>
 
       <section className="mb-8">
         <h2 className="text-2xl font-semibold mb-2">Password Auditor</h2>

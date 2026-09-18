@@ -5,9 +5,11 @@ import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 import VisitorCounter from "./components/VisitorCounter";
 import PanicMode from "./components/PanicMode";
+import { requestAIChat } from "./lib/aiChat";
 
 
 type Theme = "light" | "dark";
+type Language = "en" | "hi";
 type TabId = "emergency" | "ai" | "complaints" | "security" | "academy";
 type ChatMessage = { role: "user" | "bot"; text: string };
 type EmergencyContact = {
@@ -20,6 +22,8 @@ type Scheme = {
   name: string;
   minAge: number;
   maxIncome: number;
+  states: string[];
+  categories: Array<"Student" | "Farmer" | "Woman" | "Senior Citizen" | "General">;
   detail: string;
   applyUrl: string;
 };
@@ -27,9 +31,92 @@ type QuizQuestion = {
   question: string;
   options: Array<{ text: string; correct: boolean }>;
 };
+type AcademyGuide = {
+  title: string;
+  explanation: string;
+  protections: string[];
+};
+type ComplaintCategory = {
+  title: string;
+  description: string;
+  guidance: string;
+};
+
+const translations = {
+  en: {
+    tagline: "One Platform for Cyber Safety & Citizen Services",
+    languageLabel: "Language",
+    english: "English",
+    hindi: "Hindi",
+    emergency: "Emergency Services",
+    ai: "AI Companion & Schemes",
+    complaints: "Complaints & Grievances",
+    security: "Security Tools & Audit",
+    academy: "Cyber Awareness Academy",
+    callNow: "Call Now",
+    official: "Official",
+    schemeFinder: "Scheme Eligibility Finder",
+    age: "Age",
+    state: "State",
+    annualIncome: "Annual Income (₹)",
+    category: "Category",
+    allStates: "All States",
+    allCategories: "All Categories",
+    evaluate: "Evaluate Matching Schemes",
+    eligibilityCount: (count: number) => `You may be eligible for ${count} scheme${count === 1 ? "" : "s"}`,
+    contact: "Contact",
+    contactText: "Questions or feedback? Reach out to the Bharat App team.",
+    emailUs: "Email Us",
+    helplines: {
+      "112": "Unified Emergency Response",
+      "108": "Ambulance Emergency Services",
+      "101": "Fire Emergency Services",
+      "1930": "Cybercrime Financial Fraud Helpline",
+      "1098": "Child Helpline",
+      "181": "Women Safety Helpline",
+      "1915": "National Consumer Helpline",
+    },
+  },
+  hi: {
+    tagline: "साइबर सुरक्षा और नागरिक सेवाओं के लिए एक मंच",
+    languageLabel: "भाषा",
+    english: "अंग्रेज़ी",
+    hindi: "हिंदी",
+    emergency: "आपातकालीन सेवाएं",
+    ai: "एआई सहायक और योजनाएं",
+    complaints: "शिकायतें और जन-शिकायतें",
+    security: "सुरक्षा उपकरण और ऑडिट",
+    academy: "साइबर जागरूकता अकादमी",
+    callNow: "अभी कॉल करें",
+    official: "आधिकारिक",
+    schemeFinder: "योजना पात्रता खोजक",
+    age: "आयु",
+    state: "राज्य",
+    annualIncome: "वार्षिक आय (₹)",
+    category: "श्रेणी",
+    allStates: "सभी राज्य",
+    allCategories: "सभी श्रेणियां",
+    evaluate: "मिलान योजनाएं देखें",
+    eligibilityCount: (count: number) => `आप ${count} योजना${count === 1 ? "" : "ओं"} के लिए पात्र हो सकते हैं`,
+    contact: "संपर्क",
+    contactText: "प्रश्न या सुझाव हैं? भारत ऐप टीम से संपर्क करें।",
+    emailUs: "ईमेल करें",
+    helplines: {
+      "112": "एकीकृत आपातकालीन सहायता",
+      "108": "एम्बुलेंस आपातकालीन सेवा",
+      "101": "अग्निशमन आपातकालीन सेवा",
+      "1930": "साइबर अपराध वित्तीय धोखाधड़ी हेल्पलाइन",
+      "1098": "बाल हेल्पलाइन",
+      "181": "महिला सुरक्षा हेल्पलाइन",
+      "1915": "राष्ट्रीय उपभोक्ता हेल्पलाइन",
+    },
+  },
+} as const;
 
 const emergencyContacts: EmergencyContact[] = [
   { number: "112", label: "Unified Emergency Response" },
+  { number: "108", label: "Ambulance Emergency Services" },
+  { number: "101", label: "Fire Emergency Services" },
   {
     number: "1930",
     label: "Cybercrime Financial Fraud Helpline",
@@ -51,11 +138,28 @@ const emergencyContacts: EmergencyContact[] = [
 },
 ];
 
+const primaryEmergencyServices = [
+  { number: "112", title: "Unified Emergency Response", subtitle: "Police • Fire • Medical", icon: "🚨" },
+  { number: "108", title: "Ambulance Emergency Services", subtitle: "Medical Emergency", icon: "🚑" },
+  { number: "101", title: "Fire Emergency Services", subtitle: "Fire & Rescue", icon: "🚒" },
+  { number: "1930", title: "Cybercrime Financial Fraud Helpline", subtitle: "Report Financial Cyber Fraud", icon: "🛡️" },
+];
+
+const indianStates = [
+  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
+  "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka",
+  "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram",
+  "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu",
+  "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal",
+];
+
 const schemeCards: Scheme[] = [
   {
     name: "PM-KISAN",
     minAge: 18,
     maxIncome: 300000,
+    states: ["All"],
+    categories: ["Farmer"],
     detail: "Liquid financial credits up to ₹6,000 mapping to farmer accounts directly.",
     applyUrl: "https://pmkisan.gov.in",
   },
@@ -63,6 +167,8 @@ const schemeCards: Scheme[] = [
     name: "Post-Matric Scholarship",
     minAge: 16,
     maxIncome: 250000,
+    states: ["All"],
+    categories: ["Student"],
     detail: "100% academic verification reimbursement mechanism for underprivileged students.",
     applyUrl: "https://scholarships.gov.in",
   },
@@ -70,6 +176,8 @@ const schemeCards: Scheme[] = [
     name: "MGNREGA",
     minAge: 18,
     maxIncome: 150000,
+    states: ["All"],
+    categories: ["General"],
     detail: "Guaranteed 100 days of manual wage telemetry deployment logs per household.",
     applyUrl: "https://nrega.nic.in",
   },
@@ -110,6 +218,97 @@ const academyQuizQuestions: QuizQuestion[] = [
       { text: 'Treat it as a red flag and avoid paying', correct: true },
       { text: 'Pay the fee to secure the job', correct: false },
     ],
+  },
+];
+
+const academyGuides: AcademyGuide[] = [
+  {
+    title: "UPI Scam",
+    explanation:
+      "Scammers may pretend to be customer support or send a collect request while claiming you will receive money. Remember that entering a UPI PIN authorizes a payment; it is never required to receive a refund.",
+    protections: [
+      "Verify the recipient and amount before entering your UPI PIN.",
+      "Reject unexpected collect requests and never scan a QR code to receive money.",
+      "Report suspicious transactions to your bank and 1930 immediately.",
+    ],
+  },
+  {
+    title: "Phishing",
+    explanation:
+      "Phishing messages imitate banks, government services, delivery companies, or people you know to steal login details. They often use urgent language and links to lookalike websites.",
+    protections: [
+      "Open official websites by typing the address yourself instead of tapping an unexpected link.",
+      "Check the complete sender address and domain before responding.",
+      "Never share passwords, OTPs, or recovery codes through a message.",
+    ],
+  },
+  {
+    title: "Fake Job Scam",
+    explanation:
+      "Fake recruiters promise quick hiring or unusually high salaries and then ask for registration, training, or document fees. Legitimate employers do not require payment to secure a job.",
+    protections: [
+      "Verify the company and vacancy on its official careers page.",
+      "Never pay an advance fee or share identity documents with an unverified recruiter.",
+      "Be cautious of WhatsApp-only interviews and pressure to act immediately.",
+    ],
+  },
+  {
+    title: "Investment Scam",
+    explanation:
+      "Investment scams promise guaranteed returns, exclusive tips, or fast profits through fake apps and social groups. Early withdrawals or testimonials may be used to build trust before a larger deposit is demanded.",
+    protections: [
+      "Do not trust guaranteed-return claims or unsolicited investment advice.",
+      "Use regulated platforms and verify advisers through official sources.",
+      "Never transfer money to a personal account or install an investment app from a message.",
+    ],
+  },
+  {
+    title: "OTP Fraud",
+    explanation:
+      "An OTP is a one-time authorization for a login, payment, or account change. Anyone asking for it over a call or chat may be trying to approve an action on your behalf.",
+    protections: [
+      "Keep OTPs, PINs, and verification codes private, even from someone claiming to be support.",
+      "Read the OTP message and transaction details before approving anything.",
+      "Contact the bank through its official number if an unexpected OTP arrives.",
+    ],
+  },
+  {
+    title: "Social Media Account Safety",
+    explanation:
+      "Compromised social accounts can expose private messages and be used to scam your contacts. Weak reused passwords, fake login pages, and unauthorized third-party apps are common causes.",
+    protections: [
+      "Use a unique strong password and enable two-factor authentication.",
+      "Review active sessions and connected apps regularly.",
+      "Limit public personal details and verify unusual requests through another channel.",
+    ],
+  },
+  {
+    title: "Public Wi-Fi Safety",
+    explanation:
+      "Public Wi-Fi networks can be fake, poorly secured, or monitored by attackers. Sensitive activity on an untrusted network can expose accounts and personal data.",
+    protections: [
+      "Avoid banking and sensitive logins on open public networks.",
+      "Confirm the network name with staff and use mobile data when possible.",
+      "Keep device sharing off, use HTTPS, and update your device before connecting.",
+    ],
+  },
+];
+
+const complaintCategories: ComplaintCategory[] = [
+  {
+    title: "Cybercrime Complaint",
+    description: "Report online fraud, phishing, unauthorized transactions, account compromise, or cyber harassment.",
+    guidance: "For cyber complaints and financial fraud, use cybercrime.gov.in or call 1930 for urgent assistance.",
+  },
+  {
+    title: "Consumer Complaint",
+    description: "Prepare a complaint about defective products, misleading services, billing issues, or unresolved seller disputes.",
+    guidance: "For national consumer complaints, check consumerhelpline.gov.in and keep invoices, order details, and correspondence ready.",
+  },
+  {
+    title: "Government Grievance",
+    description: "Format a grievance about public services, local administration, utilities, roads, sanitation, or other government departments.",
+    guidance: "Check your relevant department or state grievance portal and keep the department, location, and submission date available.",
   },
 ];
 
@@ -180,6 +379,8 @@ export default function Home() {
     return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   });
   const isDark = theme === "dark";
+  const [language, setLanguage] = useState<Language>("en");
+  const copy = translations[language];
 
   const [activeTab, setActiveTab] = useState<TabId>("emergency");
 
@@ -197,9 +398,14 @@ export default function Home() {
   const [complaintOutput, setComplaintOutput] = useState("");
   const [complaintAnalysis, setComplaintAnalysis] = useState("");
   const [complaintError, setComplaintError] = useState<string | null>(null);
+  const [selectedComplaintCategory, setSelectedComplaintCategory] = useState(complaintCategories[0].title);
+  const [complaintReference, setComplaintReference] = useState("");
+  const [trackingGuidance, setTrackingGuidance] = useState("");
 
   const [schemeAge, setSchemeAge] = useState("");
+  const [schemeState, setSchemeState] = useState("");
   const [schemeIncome, setSchemeIncome] = useState("");
+  const [schemeCategory, setSchemeCategory] = useState("");
   const [selectedSchemeName, setSelectedSchemeName] = useState<string | null>(null);
   const [matchingSchemeNames, setMatchingSchemeNames] = useState<string[] | null>(null);
   const [schemeEvaluation, setSchemeEvaluation] = useState("");
@@ -211,6 +417,17 @@ export default function Home() {
   useEffect(() => {
     localStorage.setItem("theme", theme);
   }, [theme]);
+
+  useEffect(() => {
+    const savedLanguage = localStorage.getItem("language");
+    if (savedLanguage === "en" || savedLanguage === "hi") {
+      setLanguage(savedLanguage);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("language", language);
+  }, [language]);
 
   useEffect(() => {
     const tabs: TabId[] = ["emergency", "ai", "complaints", "security", "academy"];
@@ -254,6 +471,24 @@ export default function Home() {
     }
     setActiveTab(tab);
     section.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const selectComplaintCategory = (category: string) => {
+    setSelectedComplaintCategory(category);
+    document.getElementById("complaint-formatter")?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+
+  const trackComplaint = () => {
+    const reference = complaintReference.trim();
+    if (!reference) {
+      setTrackingGuidance("Enter the complaint reference number first.");
+      return;
+    }
+
+    const category = complaintCategories.find((item) => item.title === selectedComplaintCategory);
+    setTrackingGuidance(
+      `${category?.guidance ?? "Check the official portal that issued your reference number."} This tool does not connect to complaint databases, so it cannot show live status for ${reference}.`,
+    );
   };
 
   const getTabClass = (tab: TabId, variant: "default" | "emergency" | "security" = "default") => {
@@ -305,12 +540,7 @@ export default function Home() {
     setChatInput("");
 
     try {
-      const response = await fetch("/api/ai-chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: query }),
-      });
-      const data = (await response.json()) as { reply?: string; error?: string };
+      const { response, data } = await requestAIChat(query);
       const reply = typeof data.reply === "string" ? data.reply.trim() : "";
 
       if (!response.ok || !reply) {
@@ -321,7 +551,12 @@ export default function Home() {
 
       setChatMessages((prev) => [...prev, { role: "bot", text: reply }]);
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "Unable to reach AI service";
+      const message =
+        error instanceof TypeError
+          ? "Unable to reach the AI service. Please check that the app server is running."
+          : error instanceof Error
+            ? error.message
+            : "Unable to reach AI service";
       setChatMessages((prev) => [...prev, { role: "bot", text: `Sorry, ${message}` }]);
     } finally {
       setIsChatLoading(false);
@@ -437,7 +672,7 @@ Computed Severity Score: ${score}/100`,
     const age = Number.parseInt(schemeAge, 10);
     const income = Number.parseInt(schemeIncome, 10);
     if (Number.isNaN(age) || Number.isNaN(income)) {
-      setSchemeError("Age aur annual income dono fill karo for eligibility check.");
+      setSchemeError("Please enter valid age and annual income.");
       setSchemeEvaluation(
         `${scheme.name}
 Detail: ${scheme.detail}
@@ -461,9 +696,9 @@ Apply: ${scheme.applyUrl}`,
   };
 
   const runSchemeEligibility = () => {
-    const age = Number.parseInt(schemeAge, 10);
-    const income = Number.parseInt(schemeIncome, 10);
-    if (Number.isNaN(age) || Number.isNaN(income)) {
+    const age = schemeAge ? Number.parseInt(schemeAge, 10) : null;
+    const income = schemeIncome ? Number.parseInt(schemeIncome, 10) : null;
+    if ((schemeAge && Number.isNaN(age)) || (schemeIncome && Number.isNaN(income))) {
       setSchemeError("Please enter valid age and annual income.");
       setSchemeEvaluation("");
       setMatchingSchemeNames(null);
@@ -471,26 +706,21 @@ Apply: ${scheme.applyUrl}`,
     }
     setSchemeError(null);
 
-    const matched = schemeCards.filter((scheme) => age >= scheme.minAge && income <= scheme.maxIncome);
+    const matched = schemeCards.filter((scheme) =>
+      (age === null || age >= scheme.minAge) &&
+      (income === null || income <= scheme.maxIncome) &&
+      (!schemeState || scheme.states.includes("All") || scheme.states.includes(schemeState)) &&
+      (!schemeCategory || scheme.categories.includes(schemeCategory as Scheme["categories"][number])),
+    );
     setMatchingSchemeNames(matched.map((scheme) => scheme.name));
+    setSelectedSchemeName(matched[0]?.name ?? null);
+    setSchemeEvaluation("");
     if (matched.length === 0) {
       setSchemeEvaluation("No scheme criteria matches this matrix.");
-      setSelectedSchemeName(null);
       return;
     }
 
-    if (!selectedSchemeName || !matched.some((scheme) => scheme.name === selectedSchemeName)) {
-      setSelectedSchemeName(matched[0].name);
-      evaluateSchemeFor(matched[0]);
-    }
-
-    const summary = matched
-      .map(
-        (scheme) =>
-          `${scheme.name}: Eligible ✅ (Age >= ${scheme.minAge}, Income <= ₹${scheme.maxIncome.toLocaleString("en-IN")})`,
-      )
-      .join("\n");
-    setSchemeEvaluation(summary);
+    setSchemeEvaluation(matched.map((scheme) => `${scheme.name}: Eligible ✅`).join("\n"));
   };
 
   const currentQuiz = academyQuizQuestions[quizIndex];
@@ -531,7 +761,7 @@ Apply: ${scheme.applyUrl}`,
       >
         <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-4">
           <div className="text-xl font-extrabold tracking-wide text-[#FF9933]">Bharat App</div>
-          <p className="text-xs text-gray-400 hidden md:block">One Platform for Cyber Safety & Citizen Services</p>
+          <p className="text-xs text-gray-400 hidden md:block">{copy.tagline}</p>
           <VisitorCounter />
           <button
             type="button"
@@ -543,6 +773,20 @@ Apply: ${scheme.applyUrl}`,
           >
             {isDark ? "☀ Light" : "🌙 Dark"}
           </button>
+          <label className="flex items-center gap-2 text-sm font-semibold">
+            <span className="sr-only">{copy.languageLabel}</span>
+            <select
+              value={language}
+              onChange={(event) => setLanguage(event.target.value as Language)}
+              aria-label={copy.languageLabel}
+              className={`rounded-full border px-3 py-2 ${
+                isDark ? "border-white/15 bg-[#122A4D] text-[#ECF2FA]" : "border-[#0B1F3A]/15 bg-white text-[#111E30]"
+              }`}
+            >
+              <option value="en">{copy.english}</option>
+              <option value="hi">{copy.hindi}</option>
+            </select>
+          </label>
         </div>
       </header>
 
@@ -561,7 +805,7 @@ Apply: ${scheme.applyUrl}`,
             className={getTabClass("emergency", "emergency")}
           >
             <i className="fa-solid fa-heart-pulse" />
-            Emergency Services
+            {copy.emergency}
           </a>
           <a
             href="#ai"
@@ -572,7 +816,7 @@ Apply: ${scheme.applyUrl}`,
             className={getTabClass("ai")}
           >
             <i className="fa-solid fa-robot" />
-            AI Companion & Schemes
+            {copy.ai}
           </a>
           <a
             href="#complaints"
@@ -583,7 +827,7 @@ Apply: ${scheme.applyUrl}`,
             className={getTabClass("complaints")}
           >
             <i className="fa-solid fa-file-invoice" />
-            Complaints & Grievances
+            {copy.complaints}
           </a>
           <a
             href="#security"
@@ -594,7 +838,7 @@ Apply: ${scheme.applyUrl}`,
             className={getTabClass("security", "security")}
           >
             <i className="fa-solid fa-screwdriver-wrench" />
-            Security Tools & Audit
+            {copy.security}
           </a>
           <a
             href="#academy"
@@ -605,7 +849,7 @@ Apply: ${scheme.applyUrl}`,
             className={getTabClass("academy")}
           >
             <i className="fa-solid fa-graduation-cap" />
-            Cyber Awareness Academy
+            {copy.academy}
           </a>
         </div>
       </nav>
@@ -617,33 +861,47 @@ Apply: ${scheme.applyUrl}`,
             isDark ? "border-white/10 bg-[#0A1424]" : "border-[#0B1F3A]/10 bg-white"
           }`}
         >
-          <h2 className="mb-4 text-2xl font-bold">Emergency Services</h2>
+          <h2 className="mb-4 text-2xl font-bold">{copy.emergency}</h2>
           <PanicMode />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {emergencyContacts.map((item) => (
+            {primaryEmergencyServices.map((item) => (
               <div
                 key={item.number}
                 className={`hover-lift rounded-xl border p-4 ${
                   isDark ? "border-white/10 bg-[#122A4D]" : "border-[#0B1F3A]/10 bg-[#F9FBFF]"
                 }`}
               >
-                <p className="text-3xl font-extrabold text-[#FF9933]">{item.number}</p>
-                <p className="mt-1 text-sm">{item.label}</p>
-                <a href={`tel:${item.number}`} className="mt-3 inline-block bg-red-600 text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-red-700">Call Now</a>
-                {item.websiteUrl ? (
-                  <a
-                    href={item.websiteUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-2 inline-flex text-xs font-semibold text-[#FF9933] underline"
-                  >
-                    Official: {item.websiteLabel}
-                  </a>
-                ) : null}
+                <div className="text-3xl">{item.icon}</div>
+                <p className="mt-2 text-3xl font-extrabold text-[#FF9933]">{item.number}</p>
+                <p className="mt-1 text-sm font-semibold">{copy.helplines[item.number as keyof typeof copy.helplines] ?? item.title}</p>
+                <p className="mt-1 text-xs opacity-75">{item.subtitle}</p>
+                <a href={`tel:${item.number}`} className="mt-3 inline-block rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700">{copy.callNow}</a>
               </div>
             ))}
           </div>
+          <div className="mt-4 grid gap-4 sm:grid-cols-3">
+            {emergencyContacts.filter((item) => !["112", "108", "101", "1930"].includes(item.number)).map((item) => (
+              <div key={item.number} className={`rounded-xl border p-4 ${isDark ? "border-white/10 bg-[#122A4D]" : "border-[#0B1F3A]/10 bg-[#F9FBFF]"}`}>
+                <p className="text-2xl font-extrabold text-[#FF9933]">{item.number}</p>
+                <p className="mt-1 text-sm">{copy.helplines[item.number as keyof typeof copy.helplines] ?? item.label}</p>
+                <a href={`tel:${item.number}`} className="mt-3 inline-block rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white">{copy.callNow}</a>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 rounded-xl border border-red-400/40 bg-red-500/10 p-4">
+            <h3 className="text-lg font-bold">🛡️ Cyber Fraud? Act Fast</h3>
+            <p className="mt-1 text-sm">If you have lost money due to an online fraud, call 1930 immediately and report it online.</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <a href="tel:1930" className="rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white">Call 1930</a>
+              <a href="https://cybercrime.gov.in" target="_blank" rel="noopener noreferrer" className="rounded-full bg-[#0B1F3A] px-4 py-2 text-sm font-semibold text-white">Report Online</a>
+            </div>
+            <p className="mt-3 text-xs font-semibold text-red-200">Never share OTP, UPI PIN or passwords with anyone.</p>
+          </div>
           <NearbyServicesMap isDark={isDark} />
+          <div className={`mt-5 rounded-xl border p-4 ${isDark ? "border-white/10 bg-[#122A4D]" : "border-[#0B1F3A]/10 bg-[#F9FBFF]"}`}>
+            <h3 className="text-lg font-bold">Safety Tips</h3>
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm"><li>Keep emergency contacts and official helpline numbers saved.</li><li>Never share OTPs, UPI PINs, passwords, or remote-access codes.</li><li>Move to a safe public place and contact official services during danger.</li></ul>
+          </div>
         </section>
 
         <section
@@ -652,7 +910,7 @@ Apply: ${scheme.applyUrl}`,
             isDark ? "border-white/10 bg-[#0A1424]" : "border-[#0B1F3A]/10 bg-white"
           }`}
         >
-          <h2 className="mb-4 text-2xl font-bold">AI Companion & Schemes</h2>
+          <h2 className="mb-4 text-2xl font-bold">{copy.ai}</h2>
           <div className="grid gap-6 lg:grid-cols-2">
             <div
               className={`rounded-xl border p-4 ${
@@ -717,7 +975,7 @@ Apply: ${scheme.applyUrl}`,
                 isDark ? "border-white/10 bg-[#122A4D]" : "border-[#0B1F3A]/10 bg-[#F9FBFF]"
               }`}
             >
-              <h3 className="mb-3 text-lg font-bold">Scheme Eligibility Finder</h3>
+              <h3 className="mb-3 text-lg font-bold">{copy.schemeFinder}</h3>
               <div className="grid gap-2 sm:grid-cols-2">
                 <input
                   type="number"
@@ -732,8 +990,12 @@ Apply: ${scheme.applyUrl}`,
                       ? "border-white/20 bg-[#050B14] text-[#ECF2FA]"
                       : "border-[#0B1F3A]/20 bg-white text-[#111E30]"
                   }`}
-                  placeholder="Age"
+                  placeholder={copy.age}
                 />
+                <select value={schemeState} onChange={(event) => { setSchemeState(event.target.value); setMatchingSchemeNames(null); }} className={`rounded-lg border px-3 py-2 ${isDark ? "border-white/20 bg-[#050B14] text-[#ECF2FA]" : "border-[#0B1F3A]/20 bg-white text-[#111E30]"}`}>
+                  <option value="">{copy.allStates}</option>
+                  {indianStates.map((state) => <option key={state} value={state}>{state}</option>)}
+                </select>
                 <input
                   type="number"
                   min={0}
@@ -747,16 +1009,21 @@ Apply: ${scheme.applyUrl}`,
                       ? "border-white/20 bg-[#050B14] text-[#ECF2FA]"
                       : "border-[#0B1F3A]/20 bg-white text-[#111E30]"
                   }`}
-                  placeholder="Annual income (₹)"
+                  placeholder={copy.annualIncome}
                 />
+                <select value={schemeCategory} onChange={(event) => { setSchemeCategory(event.target.value); setMatchingSchemeNames(null); }} className={`rounded-lg border px-3 py-2 ${isDark ? "border-white/20 bg-[#050B14] text-[#ECF2FA]" : "border-[#0B1F3A]/20 bg-white text-[#111E30]"}`}>
+                  <option value="">{copy.allCategories}</option>
+                  {["Student", "Farmer", "Woman", "Senior Citizen", "General"].map((category) => <option key={category} value={category}>{category}</option>)}
+                </select>
               </div>
               <button
                 type="button"
                 onClick={runSchemeEligibility}
                 className="mt-3 rounded-full bg-[#0B1F3A] px-4 py-2 text-sm font-semibold text-white"
               >
-                Evaluate All Matching Schemes
+                {copy.evaluate}
               </button>
+              {matchingSchemeNames ? <p className="mt-3 text-sm font-semibold text-[#FF9933]">{copy.eligibilityCount(visibleSchemes.length)}</p> : null}
               {schemeError ? <p className="mt-2 text-sm text-[#ffb0b0]">{schemeError}</p> : null}
 
               <div className="mt-4 grid gap-3">
@@ -818,18 +1085,45 @@ Apply: ${scheme.applyUrl}`,
             isDark ? "border-white/10 bg-[#0A1424]" : "border-[#0B1F3A]/10 bg-white"
           }`}
         >
-          <h2 className="mb-4 text-2xl font-bold">Complaints & Grievances</h2>
-          <textarea
-            rows={4}
-            value={complaintInput}
-            onChange={(event) => setComplaintInput(event.target.value)}
-            className={`w-full rounded-xl border p-3 ${
-              isDark
-                ? "border-white/20 bg-[#122A4D] text-[#ECF2FA]"
-                : "border-[#0B1F3A]/20 bg-[#F9FBFF] text-[#111E30]"
-            }`}
-            placeholder="Issue likhiye: location, incident details, timeline..."
-          />
+          <h2 className="mb-4 text-2xl font-bold">{copy.complaints}</h2>
+          <div className="grid gap-4 md:grid-cols-3">
+            {complaintCategories.map((category) => (
+              <article
+                key={category.title}
+                className={`rounded-xl border p-4 ${
+                  selectedComplaintCategory === category.title
+                    ? "border-[#FF9933] bg-[#FF9933]/10"
+                    : isDark
+                      ? "border-white/15 bg-[#122A4D]"
+                      : "border-[#0B1F3A]/15 bg-[#F9FBFF]"
+                }`}
+              >
+                <h3 className="text-lg font-bold">{category.title}</h3>
+                <p className="mt-2 text-sm opacity-85">{category.description}</p>
+                <button
+                  type="button"
+                  onClick={() => selectComplaintCategory(category.title)}
+                  className="mt-4 rounded-full bg-[#0B1F3A] px-4 py-2 text-sm font-semibold text-white"
+                >
+                  Use Complaint Formatter
+                </button>
+              </article>
+            ))}
+          </div>
+
+          <div id="complaint-formatter" className="mt-6">
+            <h3 className="mb-2 text-lg font-bold">Complaint Formatter: {selectedComplaintCategory}</h3>
+            <textarea
+              rows={4}
+              value={complaintInput}
+              onChange={(event) => setComplaintInput(event.target.value)}
+              className={`w-full rounded-xl border p-3 ${
+                isDark
+                  ? "border-white/20 bg-[#122A4D] text-[#ECF2FA]"
+                  : "border-[#0B1F3A]/20 bg-[#F9FBFF] text-[#111E30]"
+              }`}
+              placeholder={`Describe your ${selectedComplaintCategory.toLowerCase()} with location, incident details, and timeline...`}
+            />
           <div className="mt-4 flex flex-wrap gap-3">
             <button
               type="button"
@@ -890,6 +1184,28 @@ Apply: ${scheme.applyUrl}`,
               {complaintAnalysis}
             </pre>
           ) : null}
+          </div>
+
+          <div className={`mt-8 rounded-xl border p-4 ${isDark ? "border-white/15 bg-[#122A4D]" : "border-[#0B1F3A]/15 bg-[#F9FBFF]"}`}>
+            <h3 className="text-lg font-bold">Track Complaint</h3>
+            <p className="mt-1 text-sm opacity-85">
+              Enter a reference number for guidance only. This app does not provide live complaint status.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <input
+                value={complaintReference}
+                onChange={(event) => setComplaintReference(event.target.value)}
+                className={`min-w-[16rem] flex-1 rounded-lg border px-3 py-2 ${
+                  isDark ? "border-white/20 bg-[#050B14] text-[#ECF2FA]" : "border-[#0B1F3A]/20 bg-white text-[#111E30]"
+                }`}
+                placeholder="Complaint reference number"
+              />
+              <button type="button" onClick={trackComplaint} className="rounded-full bg-[#128807] px-5 py-2 font-semibold text-white">
+                Check Guidance
+              </button>
+            </div>
+            {trackingGuidance ? <p className="mt-3 text-sm leading-6">{trackingGuidance}</p> : null}
+          </div>
         </section>
 
         <section
@@ -898,7 +1214,7 @@ Apply: ${scheme.applyUrl}`,
             isDark ? "border-white/10 bg-[#0A1424]" : "border-[#0B1F3A]/10 bg-white"
           }`}
         >
-          <h2 className="mb-3 text-2xl font-bold">Security Tools & Audit</h2>
+          <h2 className="mb-3 text-2xl font-bold">{copy.security}</h2>
           <p className="mb-4 text-sm opacity-90">
             Password checks, malicious URL scanner, SHA-256 hash checks, and breach verification.
           </p>
@@ -916,7 +1232,26 @@ Apply: ${scheme.applyUrl}`,
             isDark ? "border-white/10 bg-[#0A1424]" : "border-[#0B1F3A]/10 bg-white"
           }`}
         >
-          <h2 className="mb-4 text-2xl font-bold">Cyber Awareness Academy</h2>
+          <h2 className="mb-4 text-2xl font-bold">{copy.academy}</h2>
+          <div className="mb-6 grid gap-4 md:grid-cols-2">
+            {academyGuides.map((guide) => (
+              <article
+                key={guide.title}
+                className={`rounded-xl border p-4 ${
+                  isDark ? "border-white/15 bg-[#122A4D]" : "border-[#0B1F3A]/15 bg-[#F9FBFF]"
+                }`}
+              >
+                <h3 className="text-lg font-bold text-[#FF9933]">{guide.title}</h3>
+                <p className="mt-2 text-sm leading-6 opacity-90">{guide.explanation}</p>
+                <h4 className="mt-3 text-sm font-semibold">How to protect yourself</h4>
+                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm opacity-90">
+                  {guide.protections.map((protection) => (
+                    <li key={protection}>{protection}</li>
+                  ))}
+                </ul>
+              </article>
+            ))}
+          </div>
           <p className="mb-4 text-sm">
             Question {quizIndex + 1} of {academyQuizQuestions.length} | Score: {quizScore}
           </p>
@@ -958,13 +1293,27 @@ Apply: ${scheme.applyUrl}`,
             {quizIndex === academyQuizQuestions.length - 1 ? "Restart Quiz" : "Next Question"}
           </button>
         </section>
+
+        <section
+          id="contact"
+          className={`rounded-2xl border p-6 ${
+            isDark ? "border-white/10 bg-[#0A1424]" : "border-[#0B1F3A]/10 bg-white"
+          }`}
+        >
+          <h2 className="mb-2 text-2xl font-bold">{copy.contact}</h2>
+          <p className="mb-4 text-sm opacity-85">{copy.contactText}</p>
+          <a href="mailto:support@bharatapp.example" className="inline-flex rounded-full bg-[#FF9933] px-5 py-2 font-semibold text-white">
+            {copy.emailUs}
+          </a>
+        </section>
       </main>
       <footer className="mt-16 py-8 border-t border-gray-700 text-center text-gray-400">
   <div className="flex justify-center gap-6 mb-3">
     <a href="#" className="hover:text-white">About</a>
-    <a href="#" className="hover:text-white">Privacy Policy</a>
+    <a href="/privacy" className="hover:text-white">Privacy Policy</a>
+    <a href="/terms" className="hover:text-white">Terms of Service</a>
     <a href="https://github.com/kunalkushwaha-tech" target="_blank" className="hover:text-white">GitHub</a>
-    <a href="tel:+918126748461" className="hover:text-white">Contact</a>
+    <a href="#contact" className="hover:text-white">Contact</a>
   </div>
   <p className="text-sm">© 2026 Bharat App</p>
 </footer>
