@@ -1,5 +1,6 @@
 "use client";
 
+import { Component, type ErrorInfo, type ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import L, { type LatLngTuple } from "leaflet";
 import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
@@ -14,6 +15,32 @@ type ServicePoint = {
   type: "police" | "hospital" | "cyber";
   position: LatLngTuple;
 };
+
+type MapErrorBoundaryState = { hasError: boolean };
+
+class MapErrorBoundary extends Component<{ children: ReactNode; isDark: boolean }, MapErrorBoundaryState> {
+  state: MapErrorBoundaryState = { hasError: false };
+
+  static getDerivedStateFromError(): MapErrorBoundaryState {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error("Nearby emergency map failed to render", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className={`rounded-lg border p-5 text-sm ${this.props.isDark ? "border-red-300/30 bg-[#351522] text-red-100" : "border-red-300 bg-red-50 text-red-900"}`}>
+          <p className="font-semibold">Emergency map is unavailable right now.</p>
+          <p className="mt-1">Use the emergency call buttons above or try refreshing this section later.</p>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 const DEFAULT_CENTER: LatLngTuple = [28.6139, 77.209];
 
@@ -131,34 +158,36 @@ export default function NearbyServicesMap({ isDark }: NearbyServicesMapProps) {
         </p>
       ) : null}
 
-      <div className="w-full h-[320px] overflow-hidden rounded-lg border border-white/15">
-        <MapContainer
-          key={`${center[0]}-${center[1]}`}
-          center={center}
-          zoom={13}
-          scrollWheelZoom
-          className="w-full h-full"
-          style={{ height: "100%", width: "100%" }}
-        >
-          <MapResizeHandler triggerKey={`${center[0]}-${center[1]}-${geoState}`} />
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
+      <MapErrorBoundary isDark={isDark}>
+        <div className="w-full h-[320px] overflow-hidden rounded-lg border border-white/15">
+          <MapContainer
+            key={`${center[0]}-${center[1]}`}
+            center={center}
+            zoom={13}
+            scrollWheelZoom
+            className="w-full h-full"
+            style={{ height: "100%", width: "100%" }}
+          >
+            <MapResizeHandler triggerKey={`${center[0]}-${center[1]}-${geoState}`} />
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
 
-          {userLocation ? (
-            <Marker position={userLocation} icon={iconByType.user} alt="Your current location">
-              <Popup>Your current location</Popup>
-            </Marker>
-          ) : null}
+            {userLocation ? (
+              <Marker position={userLocation} icon={iconByType.user} alt="Your current location">
+                <Popup>Your current location</Popup>
+              </Marker>
+            ) : null}
 
-          {nearbyServices.map((service) => (
-          <Marker key={service.id} position={service.position} icon={iconByType[service.type]} alt={service.label}>
-              <Popup>{service.label}</Popup>
-            </Marker>
-          ))}
-        </MapContainer>
-      </div>
+            {nearbyServices.map((service) => (
+              <Marker key={service.id} position={service.position} icon={iconByType[service.type]} alt={service.label}>
+                <Popup>{service.label}</Popup>
+              </Marker>
+            ))}
+          </MapContainer>
+        </div>
+      </MapErrorBoundary>
     </div>
   );
 }

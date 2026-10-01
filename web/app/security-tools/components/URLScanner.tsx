@@ -12,6 +12,8 @@ export default function URLScanner() {
   const [result, setResult] = useState<UrlScanSummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [upi, setUpi] = useState('');
+  const [upiResult, setUpiResult] = useState<string | null>(null);
 
   async function scan() {
     setError(null);
@@ -41,6 +43,19 @@ export default function URLScanner() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function verifyUPI() {
+    const normalized = upi.trim().toLowerCase();
+    const valid = /^[a-z0-9._-]{2,256}@[a-z0-9.-]{2,64}$/.test(normalized);
+    const flagged = ['fraud@ybl', 'scam@oksbi', 'test@fraud'].includes(normalized);
+    setUpiResult(
+      !valid
+        ? 'UPI ID format looks invalid.'
+        : flagged
+          ? 'Mock fraud database match: do not pay this ID.'
+          : 'Format looks valid. No match in the local demo fraud list.',
+    );
   }
 
   return (
@@ -87,6 +102,21 @@ export default function URLScanner() {
 
       <div className="mt-3 text-sm text-[#C8D5EA]">
         Note: Safe Browsing requires a server-side API key. If no key is configured, the server will return an explanatory message and heuristics above still apply.
+      </div>
+      <div className="mt-6 border-t border-white/10 pt-4">
+        <label className="mb-2 block font-medium text-[#ECF2FA]" htmlFor="upi-verifier">UPI ID verifier</label>
+        <div className="flex gap-2">
+          <input
+            id="upi-verifier"
+            className="flex-1 rounded border border-white/15 bg-[#050B14] p-2 text-[#ECF2FA]"
+            value={upi}
+            onChange={(event) => setUpi(event.target.value)}
+            placeholder="user@ybl"
+          />
+          <button type="button" className="rounded bg-sky-600 px-4 py-2 text-white" onClick={verifyUPI}>Verify</button>
+        </div>
+        {upiResult && <p className="mt-3 rounded bg-[#050B14] p-3 text-sm text-[#C8D5EA]">{upiResult}</p>}
+        <p className="mt-2 text-xs text-[#C8D5EA]">Demo check only. Confirm the recipient name in your UPI app before paying.</p>
       </div>
       <ToolFeedback toolId="url" />
       <RecentChecks toolId="url" />

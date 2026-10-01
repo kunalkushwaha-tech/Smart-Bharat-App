@@ -8,6 +8,8 @@ import IceCard from "./components/IceCard";
 import PanicMode from "./components/PanicMode";
 import CommunityScamAlerts from "./components/CommunityScamAlerts";
 import EmergencyErrorBoundary from "./components/EmergencyErrorBoundary";
+import SpeechInput from "./components/SpeechInput";
+import CyberAwarenessCertificate from "./components/CyberAwarenessCertificate";
 
 
 type Theme = "light" | "dark";
@@ -59,21 +61,21 @@ const schemeCards: Scheme[] = [
     name: "PM-KISAN",
     minAge: 18,
     maxIncome: 300000,
-    detail: "Liquid financial credits up to ₹6,000 mapping to farmer accounts directly.",
+    detail: "Farmers can receive up to ₹6,000 per year in three instalments, paid directly into their bank account.",
     applyUrl: "https://pmkisan.gov.in",
   },
   {
     name: "Post-Matric Scholarship",
     minAge: 16,
     maxIncome: 250000,
-    detail: "100% academic verification reimbursement mechanism for underprivileged students.",
+    detail: "Financial help for eligible students from some communities to continue their studies after school.",
     applyUrl: "https://scholarships.gov.in",
   },
   {
     name: "MGNREGA",
     minAge: 18,
     maxIncome: 150000,
-    detail: "Guaranteed 100 days of manual wage telemetry deployment logs per household.",
+    detail: "Rural households can get up to 100 days of paid work in a year. Ask your Gram Panchayat to apply.",
     applyUrl: "https://nrega.nic.in",
   },
 ];
@@ -118,7 +120,11 @@ const academyQuizQuestions: QuizQuestion[] = [
 
 const NearbyServicesMap = dynamic(() => import("./components/NearbyServicesMap"), {
   ssr: false,
-  loading: () => <p className="mt-3 text-sm opacity-80">Loading emergency map...</p>,
+  loading: () => (
+    <div className="mt-5 rounded-xl border border-white/10 bg-[#0A1424] p-4 text-sm text-[#C8D5EA]">
+      Emergency map is loading. Use the helpline buttons above if you need immediate assistance.
+    </div>
+  ),
 });
 
 const departmentKeywordMap: Record<string, string[]> = {
@@ -211,6 +217,7 @@ export default function Home() {
   const [quizIndex, setQuizIndex] = useState(0);
   const [quizAnswered, setQuizAnswered] = useState<boolean | null>(null);
   const [quizScore, setQuizScore] = useState(0);
+  const [quizCompletedScore, setQuizCompletedScore] = useState<number | null>(null);
 
   useEffect(() => {
     localStorage.setItem("theme", theme);
@@ -512,8 +519,10 @@ Apply: ${scheme.applyUrl}`,
       return;
     }
     setQuizAnswered(isCorrect);
-    if (isCorrect) {
-      setQuizScore((prev) => prev + 1);
+    const nextScore = quizScore + (isCorrect ? 1 : 0);
+    setQuizScore(nextScore);
+    if (quizIndex >= academyQuizQuestions.length - 1) {
+      setQuizCompletedScore(nextScore);
     }
   };
 
@@ -522,6 +531,7 @@ Apply: ${scheme.applyUrl}`,
       setQuizIndex(0);
       setQuizScore(0);
       setQuizAnswered(null);
+      setQuizCompletedScore(null);
       return;
     }
     setQuizIndex((prev) => prev + 1);
@@ -642,7 +652,7 @@ Apply: ${scheme.applyUrl}`,
                 >
                   <p className="text-3xl font-extrabold text-[#FF9933]">{item.number}</p>
                   <p className="mt-1 text-sm">{item.label}</p>
-                  <a aria-label={`Call ${item.label} at ${item.number}`} href={`tel:${item.number}`} className="mt-3 inline-block bg-red-600 text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-red-700">Call Now</a>
+                  <a aria-label={`Call ${item.label} at ${item.number}`} href={`tel:${item.number.replace(/\D/g, "")}`} className="mt-3 inline-block bg-red-600 text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-red-700">Call Now</a>
                   {item.websiteUrl ? (
                     <a
                       href={item.websiteUrl}
@@ -694,6 +704,7 @@ Apply: ${scheme.applyUrl}`,
                   }`}
                   placeholder="Type your query..."
                 />
+                <SpeechInput value={chatInput} onChange={setChatInput} />
                 <button
                   type="button"
                   disabled={isChatLoading}
@@ -934,51 +945,61 @@ Apply: ${scheme.applyUrl}`,
         >
           <h2 className="mb-4 text-2xl font-bold">Cyber Awareness Academy</h2>
           <CommunityScamAlerts />
-          <p className="mb-4 text-sm">
-            Question {quizIndex + 1} of {academyQuizQuestions.length} | Score: {quizScore}
-          </p>
-          <p className="mb-4 text-sm font-semibold">{currentQuiz.question}</p>
-          <div className="grid gap-3">
-            {currentQuiz.options.map((option, index) => {
-              const selectedWrong = quizAnswered === false && option.correct === false;
-              const selectedCorrect = quizAnswered === true && option.correct === true;
-              return (
-                <button
-                  key={`${quizIndex}-${index}`}
-                  type="button"
-                  onClick={() => handleQuizAnswer(option.correct)}
-                  className={`rounded-xl border p-3 text-left ${
-                    selectedCorrect
-                      ? "border-[#128807] bg-[#128807]/15"
-                      : selectedWrong
-                        ? "border-[#d93838] bg-[#d93838]/15"
-                        : isDark
-                          ? "border-white/20 bg-[#122A4D]"
-                          : "border-[#0B1F3A]/15 bg-[#F9FBFF]"
-                  }`}
-                >
-                  {option.text}
-                </button>
-              );
-            })}
-          </div>
-          {quizAnswered !== null ? (
-            <p className={`mt-3 text-sm font-semibold ${quizAnswered ? "text-[#4ade80]" : "text-[#f87171]"}`}>
-              {quizAnswered ? "Correct answer selected ✅" : "Wrong choice ❌  — dubara socho aur safe option follow karo."}
-            </p>
-          ) : null}
-          <button
-            type="button"
-            onClick={moveToNextQuiz}
-            className="mt-4 rounded-full bg-[#0B1F3A] px-5 py-2 text-sm font-semibold text-white"
-          >
-            {quizIndex === academyQuizQuestions.length - 1 ? "Restart Quiz" : "Next Question"}
-          </button>
+          {quizCompletedScore === null ? (
+            <>
+              <p className="mb-4 text-sm">
+                Question {quizIndex + 1} of {academyQuizQuestions.length} | Score: {quizScore}
+              </p>
+              <p className="mb-4 text-sm font-semibold">{currentQuiz.question}</p>
+              <div className="grid gap-3">
+                {currentQuiz.options.map((option, index) => {
+                  const selectedWrong = quizAnswered === false && option.correct === false;
+                  const selectedCorrect = quizAnswered === true && option.correct === true;
+                  return (
+                    <button
+                      key={`${quizIndex}-${index}`}
+                      type="button"
+                      onClick={() => handleQuizAnswer(option.correct)}
+                      className={`rounded-xl border p-3 text-left ${
+                        selectedCorrect
+                          ? "border-[#128807] bg-[#128807]/15"
+                          : selectedWrong
+                            ? "border-[#d93838] bg-[#d93838]/15"
+                            : isDark
+                              ? "border-white/20 bg-[#122A4D]"
+                              : "border-[#0B1F3A]/15 bg-[#F9FBFF]"
+                      }`}
+                    >
+                      {option.text}
+                    </button>
+                  );
+                })}
+              </div>
+              {quizAnswered !== null ? (
+                <p className={`mt-3 text-sm font-semibold ${quizAnswered ? "text-[#4ade80]" : "text-[#f87171]"}`}>
+                  {quizAnswered ? "Correct answer selected ✅" : "Wrong choice ❌  — dubara socho aur safe option follow karo."}
+                </p>
+              ) : null}
+              <button
+                type="button"
+                onClick={moveToNextQuiz}
+                className="mt-4 rounded-full bg-[#0B1F3A] px-5 py-2 text-sm font-semibold text-white"
+              >
+                Next Question
+              </button>
+            </>
+          ) : (
+            <CyberAwarenessCertificate
+              score={quizCompletedScore}
+              total={academyQuizQuestions.length}
+              onRestart={moveToNextQuiz}
+            />
+          )}
         </section>
       </main>
       <footer className="mt-16 py-8 border-t border-gray-700 text-center text-gray-400">
   <div className="flex justify-center gap-6 mb-3">
-    <a href="#" className="hover:text-white">About</a>
+    <a href="/about" className="hover:text-white">About</a>
     <a href="/privacy" className="hover:text-white">Privacy Policy</a>
     <a href="/terms" className="hover:text-white">Terms</a>
     <a href="https://github.com/kunalkushwaha-tech" target="_blank" className="hover:text-white">GitHub</a>
