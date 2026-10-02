@@ -5,6 +5,15 @@ import { useEffect, useMemo, useState } from "react";
 import L, { type LatLngTuple } from "leaflet";
 import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
 
+if (typeof window !== "undefined") {
+  delete (L.Icon.Default.prototype as { _getIconUrl?: unknown })._getIconUrl;
+  L.Icon.Default.mergeOptions({
+    iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+    iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+    shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  });
+}
+
 type NearbyServicesMapProps = {
   isDark: boolean;
 };
@@ -88,8 +97,14 @@ function MapResizeHandler({ triggerKey }: { triggerKey: string }) {
 
 export default function NearbyServicesMap({ isDark }: NearbyServicesMapProps) {
   const [userLocation, setUserLocation] = useState<LatLngTuple | null>(null);
-  const [geoState, setGeoState] = useState<"idle" | "loading" | "ready" | "denied" | "error">("idle");
+  const [geoState, setGeoState] = useState<"idle" | "loading" | "ready" | "denied" | "error" | "timeout">("idle");
   const [geoMessage, setGeoMessage] = useState<string>("");
+  const [mapReady, setMapReady] = useState(false);
+  const [mapLoadError, setMapLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchLocation();
+  }, []);
 
   const center = userLocation ?? DEFAULT_CENTER;
 
@@ -102,33 +117,79 @@ export default function NearbyServicesMap({ isDark }: NearbyServicesMapProps) {
     ];
   }, [center]);
 
+  useEffect(() => {
+    console.log("Map component mounted. Initial geo state:", geoState);
+    if (typeof window === "undefined") return;
+
+    const timeoutId = window.setTimeout(() => {
+      if (geoState === "loading") {
+        console.warn("Map geo fetch exceeded 10s timeout");
+        setGeoState("timeout");
+        setGeoMessage("Couldn't load map. Please try again or use the emergency helpline buttons above.");
+      }
+    }, 10000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [geoState]);
+
+  useEffect(() => {
+    console.log("Map render check: ready", mapReady, "geoState", geoState, "userLocation", userLocation);
+    if (geoState === "ready" || geoState === "denied" || geoState === "error" || geoState === "timeout") {
+      setMapReady(true);
+    }
+  }, [geoState, userLocation, mapReady]);
+
   const fetchLocation = () => {
+    console.log("fetchLocation called");
+
     if (!navigator.geolocation) {
+      console.error("Geolocation unsupported");
       setGeoState("error");
       setGeoMessage("Geolocation is not supported in this browser.");
+      setMapLoadError("Geolocation is not supported in this browser.");
       return;
     }
 
     setUserLocation(null);
     setGeoState("loading");
     setGeoMessage("");
+    setMapLoadError(null);
+    setMapReady(false);
+
+    const startedAt = Date.now();
+    const timeoutId = window.setTimeout(() => {
+      console.warn("Location fetch timed out after 10s", { elapsedMs: Date.now() - startedAt });
+      setGeoState("timeout");
+      setGeoMessage("Couldn't load map. Please try again or use the emergency helpline buttons above.");
+      setMapLoadError("Location lookup timed out. Please try again.");
+    }, 10000);
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
+        console.log("Location fetch succeeded", position.coords);
+        window.clearTimeout(timeoutId);
         setUserLocation([position.coords.latitude, position.coords.longitude]);
         setGeoState("ready");
+        setMapLoadError(null);
       },
       (error) => {
+        console.error("Location fetch failed", error);
+        window.clearTimeout(timeoutId);
         if (error.code === error.PERMISSION_DENIED) {
           setGeoState("denied");
           setGeoMessage("Location permission denied. Showing demo nearby services for reference.");
+          setMapLoadError("Location permission denied.");
           return;
         }
         setGeoState("error");
         setGeoMessage("Unable to fetch your location right now. Showing demo nearby services.");
+        setMapLoadError("Unable to fetch your location right now.");
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
     );
   };
+
+  const shouldShowMap = geoState === "ready" || geoState === "denied" || geoState === "error" || geoState === "timeout";
 
   return (
     <div
@@ -148,7 +209,7 @@ export default function NearbyServicesMap({ isDark }: NearbyServicesMapProps) {
         </button>
       </div>
 
-      {geoState === "denied" || geoState === "error" ? (
+      {(geoState === "denied" || geoState === "error" || geoState === "timeout") && geoMessage ? (
         <p className="mb-3 text-sm text-[#ffb0b0]">{geoMessage}</p>
       ) : null}
 
@@ -158,36 +219,50 @@ export default function NearbyServicesMap({ isDark }: NearbyServicesMapProps) {
         </p>
       ) : null}
 
-      <MapErrorBoundary isDark={isDark}>
-        <div className="w-full h-[320px] overflow-hidden rounded-lg border border-white/15">
-          <MapContainer
-            key={`${center[0]}-${center[1]}`}
-            center={center}
-            zoom={13}
-            scrollWheelZoom
-            className="w-full h-full"
-            style={{ height: "100%", width: "100%" }}
-          >
-            <MapResizeHandler triggerKey={`${center[0]}-${center[1]}-${geoState}`} />
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-
-            {userLocation ? (
-              <Marker position={userLocation} icon={iconByType.user} alt="Your current location">
-                <Popup>Your current location</Popup>
-              </Marker>
-            ) : null}
-
-            {nearbyServices.map((service) => (
-              <Marker key={service.id} position={service.position} icon={iconByType[service.type]} alt={service.label}>
-                <Popup>{service.label}</Popup>
-              </Marker>
-            ))}
-          </MapContainer>
+      {geoState === "loading" ? (
+        <div className="mb-3 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
+          Emergency map is loading...
         </div>
-      </MapErrorBoundary>
+      ) : null}
+
+      {shouldShowMap ? (
+        <MapErrorBoundary isDark={isDark}>
+          <div className="w-full h-[320px] overflow-hidden rounded-lg border border-white/15">
+            <MapContainer
+              key={`${center[0]}-${center[1]}`}
+              center={center}
+              zoom={13}
+              scrollWheelZoom
+              className="w-full h-full"
+              style={{ height: "100%", width: "100%" }}
+              whenReady={() => {
+                console.log("MapContainer ready");
+                setMapReady(true);
+              }}
+            >
+              <MapResizeHandler triggerKey={`${center[0]}-${center[1]}-${geoState}`} />
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+
+              {userLocation ? (
+                <Marker position={userLocation} icon={iconByType.user} alt="Your current location">
+                  <Popup>Your current location</Popup>
+                </Marker>
+              ) : null}
+
+              {nearbyServices.map((service) => (
+                <Marker key={service.id} position={service.position} icon={iconByType[service.type]} alt={service.label}>
+                  <Popup>{service.label}</Popup>
+                </Marker>
+              ))}
+            </MapContainer>
+          </div>
+        </MapErrorBoundary>
+      ) : null}
+
+      {mapLoadError ? <p className="mt-3 text-sm text-[#ffb0b0]">{mapLoadError}</p> : null}
     </div>
   );
 }

@@ -846,11 +846,16 @@ Apply: ${scheme.applyUrl}`,
           }`}
         >
           <h2 className="mb-4 text-2xl font-bold">Complaints & Grievances</h2>
+          <label htmlFor="complaint-input" className="mb-2 block text-sm font-semibold">
+            Describe your complaint
+          </label>
           <textarea
-            rows={4}
+            id="complaint-input"
+            aria-label="Complaint details"
+            rows={6}
             value={complaintInput}
             onChange={(event) => setComplaintInput(event.target.value)}
-            className={`w-full rounded-xl border p-3 ${
+            className={`min-h-[180px] w-full rounded-xl border p-3 text-base ${
               isDark
                 ? "border-white/20 bg-[#122A4D] text-[#ECF2FA]"
                 : "border-[#0B1F3A]/20 bg-[#F9FBFF] text-[#111E30]"
