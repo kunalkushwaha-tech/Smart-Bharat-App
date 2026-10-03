@@ -38,6 +38,8 @@ type QuizQuestion = {
 
 const emergencyContacts: EmergencyContact[] = [
   { number: "112", label: "Unified Emergency Response" },
+  { number: "108", label: "Ambulance Emergency Services" },
+  { number: "101", label: "Fire Emergency Services" },
   {
     number: "1930",
     label: "Cybercrime Financial Fraud Helpline",
@@ -151,9 +153,9 @@ const translations = {
 } as const;
 
 const translatedEmergencyLabels = {
-  en: ["Unified Emergency Response", "Cybercrime Financial Fraud Helpline", "Child Helpline", "Women Safety Helpline", "National Consumer Helpline"],
-  hi: ["एकीकृत आपातकालीन प्रतिक्रिया", "साइबर अपराध वित्तीय धोखाधड़ी हेल्पलाइन", "बाल हेल्पलाइन", "महिला सुरक्षा हेल्पलाइन", "राष्ट्रीय उपभोक्ता हेल्पलाइन"],
-  mr: ["एकत्रित आपत्कालीन प्रतिसाद", "सायबर गुन्हे आर्थिक फसवणूक हेल्पलाइन", "बाल हेल्पलाइन", "महिला सुरक्षा हेल्पलाइन", "राष्ट्रीय ग्राहक हेल्पलाइन"],
+  en: ["Unified Emergency Response", "Ambulance Emergency Services", "Fire Emergency Services", "Cybercrime Financial Fraud Helpline", "Child Helpline", "Women Safety Helpline", "National Consumer Helpline"],
+  hi: ["एकीकृत आपातकालीन प्रतिक्रिया", "एम्बुलेंस आपातकालीन सेवा", "अग्निशमन आपातकालीन सेवा", "साइबर अपराध वित्तीय धोखाधड़ी हेल्पलाइन", "बाल हेल्पलाइन", "महिला सुरक्षा हेल्पलाइन", "राष्ट्रीय उपभोक्ता हेल्पलाइन"],
+  mr: ["एकत्रित आपत्कालीन प्रतिसाद", "रुग्णवाहिका आपत्कालीन सेवा", "अग्निशमन आपत्कालीन सेवा", "सायबर गुन्हे आर्थिक फसवणूक हेल्पलाइन", "बाल हेल्पलाइन", "महिला सुरक्षा हेल्पलाइन", "राष्ट्रीय ग्राहक हेल्पलाइन"],
 } as const;
 
 const academyQuizQuestions: QuizQuestion[] = [

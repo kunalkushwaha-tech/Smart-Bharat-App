@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import QRCode from "qrcode";
 
 type CyberAwarenessCertificateProps = {
   score: number;
@@ -41,7 +42,48 @@ function getBadgeTier(score: number, total: number): BadgeTier {
   };
 }
 
-function drawCertificate(name: string, score: number, total: number, badge: BadgeTier) {
+function createCertificateId() {
+  const randomPart = Math.random().toString(36).slice(2, 6).toUpperCase();
+  const datePart = new Date().toISOString().slice(0, 10).replaceAll("-", "");
+  return `BHRT-CYB-${randomPart}-${datePart}`;
+}
+
+function drawEmblem(context: CanvasRenderingContext2D, x: number, y: number) {
+  context.save();
+  context.translate(x, y);
+  context.fillStyle = "#D4AF37";
+  context.strokeStyle = "#FF9933";
+  context.lineWidth = 5;
+  context.beginPath();
+  context.arc(0, 0, 78, 0, Math.PI * 2);
+  context.fill();
+  context.stroke();
+  context.fillStyle = "#050B14";
+  context.beginPath();
+  context.moveTo(0, -42);
+  for (let point = 1; point < 10; point += 1) {
+    const angle = -Math.PI / 2 + (point * Math.PI) / 5;
+    const radius = point % 2 === 0 ? 42 : 18;
+    context.lineTo(Math.cos(angle) * radius, Math.sin(angle) * radius);
+  }
+  context.closePath();
+  context.fill();
+  context.fillStyle = "#050B14";
+  context.font = "bold 15px Arial";
+  context.textAlign = "center";
+  context.fillText("BHARAT APP", 0, 58);
+  context.restore();
+}
+
+async function drawCertificate(
+  name: string,
+  score: number,
+  total: number,
+  badge: BadgeTier,
+  certificateId: string,
+) {
+  const verificationUrl = `https://smartbharat.me/verify?id=${encodeURIComponent(certificateId)}`;
+  const qrDataUrl = await QRCode.toDataURL(verificationUrl, { width: 180, margin: 1 });
   const canvas = document.createElement("canvas");
   canvas.width = 1600;
   canvas.height = 1000;
@@ -63,6 +105,7 @@ function drawCertificate(name: string, score: number, total: number, badge: Badg
   context.fillStyle = "#FF9933";
   context.font = "bold 42px Arial";
   context.fillText("BHARAT APP", canvas.width / 2, 170);
+  drawEmblem(context, 1390, 165);
   context.fillStyle = "#ECF2FA";
   context.font = "bold 78px Georgia";
   context.fillText("Certificate of Completion", canvas.width / 2, 300);
@@ -94,6 +137,20 @@ function drawCertificate(name: string, score: number, total: number, badge: Badg
   context.fillStyle = "#C8D5EA";
   context.font = "22px Arial";
   context.fillText("Founder, Bharat App", 1270, 895);
+  const qrImage = new Image();
+  qrImage.src = qrDataUrl;
+  await new Promise<void>((resolve, reject) => {
+    qrImage.onload = () => resolve();
+    qrImage.onerror = () => reject(new Error("Certificate QR code could not be loaded."));
+  });
+  context.drawImage(qrImage, 110, 740, 180, 180);
+  context.textAlign = "left";
+  context.fillStyle = "#D4AF37";
+  context.font = "bold 20px Arial";
+  context.fillText(`Certificate ID: ${certificateId}`, 330, 930);
+  context.fillStyle = "#C8D5EA";
+  context.font = "20px Arial";
+  context.fillText("Verify at smartbharat.me/verify", 330, 965);
 
   return canvas;
 }
@@ -101,6 +158,7 @@ function drawCertificate(name: string, score: number, total: number, badge: Badg
 export default function CyberAwarenessCertificate({ score, total, onRestart }: CyberAwarenessCertificateProps) {
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [certificateId] = useState(createCertificateId);
   const badge = getBadgeTier(score, total);
 
   function downloadCertificate() {
@@ -110,8 +168,7 @@ export default function CyberAwarenessCertificate({ score, total, onRestart }: C
       return;
     }
     setError(null);
-    const canvas = drawCertificate(trimmedName, score, total, badge);
-    canvas.toBlob((blob) => {
+    void drawCertificate(trimmedName, score, total, badge, certificateId).then((canvas) => canvas.toBlob((blob) => {
       if (!blob) {
         setError("Unable to create the certificate image. Please try again.");
         return;
@@ -124,7 +181,9 @@ export default function CyberAwarenessCertificate({ score, total, onRestart }: C
       link.click();
       link.remove();
       window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-    }, "image/png");
+    }, "image/png")).catch((drawError: unknown) => {
+      setError(drawError instanceof Error ? drawError.message : "Unable to create the certificate image. Please try again.");
+    });
   }
 
   return (
