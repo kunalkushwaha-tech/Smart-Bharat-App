@@ -50,3 +50,23 @@ body {
   transform: translateY(-4px);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
 }
+.scam-ticker-track {
+  animation: scam-ticker-scroll 30s linear infinite;
+}
+.scam-ticker:hover .scam-ticker-track,
+.scam-ticker:focus-within .scam-ticker-track {
+  animation-play-state: paused;
+}
+@keyframes scam-ticker-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scam-ticker-track {
+    animation: none;
+  }
+}

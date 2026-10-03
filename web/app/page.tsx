@@ -27,7 +27,10 @@ type Scheme = {
   maxIncome: number;
   detail: string;
   applyUrl: string;
+  central?: boolean;
+  relevantStates?: string[];
 };
+type Language = "en" | "hi" | "mr";
 type QuizQuestion = {
   question: string;
   options: Array<{ text: string; correct: boolean }>;
@@ -63,6 +66,7 @@ const schemeCards: Scheme[] = [
     maxIncome: 300000,
     detail: "Farmers can receive up to ₹6,000 per year in three instalments, paid directly into their bank account.",
     applyUrl: "https://pmkisan.gov.in",
+    central: true,
   },
   {
     name: "Post-Matric Scholarship",
@@ -70,6 +74,7 @@ const schemeCards: Scheme[] = [
     maxIncome: 250000,
     detail: "Financial help for eligible students from some communities to continue their studies after school.",
     applyUrl: "https://scholarships.gov.in",
+    central: true,
   },
   {
     name: "MGNREGA",
@@ -77,8 +82,79 @@ const schemeCards: Scheme[] = [
     maxIncome: 150000,
     detail: "Rural households can get up to 100 days of paid work in a year. Ask your Gram Panchayat to apply.",
     applyUrl: "https://nrega.nic.in",
+    central: true,
   },
 ];
+
+const indianStatesAndUnionTerritories = [
+  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat",
+  "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh",
+  "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab",
+  "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh",
+  "Uttarakhand", "West Bengal", "Andaman and Nicobar Islands", "Chandigarh",
+  "Dadra and Nagar Haveli and Daman and Diu", "Delhi", "Jammu and Kashmir", "Ladakh",
+  "Lakshadweep", "Puducherry",
+];
+
+const scamWarnings = [
+  "⚠️ FedEx Parcel Scam Alert",
+  "⚠️ Fake Electricity Bill SMS Fraud",
+  "⚠️ Part-Time Job Scam on WhatsApp",
+  "⚠️ KYC Update Phishing Calls",
+  "⚠️ Fake Loan App Harassment",
+  "⚠️ UPI Refund Request Fraud",
+];
+
+const translations = {
+  en: {
+    language: "Language",
+    tagline: "One Platform for Cyber Safety & Citizen Services",
+    emergency: "Emergency Services",
+    ai: "AI Companion & Schemes",
+    complaints: "Complaints & Grievances",
+    security: "Security Tools & Audit",
+    academy: "Cyber Awareness Academy",
+    schemeFinder: "Scheme Eligibility Finder",
+    state: "State",
+    allStates: "All States & UTs",
+    evaluate: "Evaluate All Matching Schemes",
+    tickerLabel: "Trending scam alerts",
+  },
+  hi: {
+    language: "भाषा",
+    tagline: "साइबर सुरक्षा और नागरिक सेवाओं का एक मंच",
+    emergency: "आपातकालीन सेवाएं",
+    ai: "एआई सहायक और योजनाएं",
+    complaints: "शिकायतें और जन-शिकायत",
+    security: "सुरक्षा उपकरण और ऑडिट",
+    academy: "साइबर जागरूकता अकादमी",
+    schemeFinder: "योजना पात्रता खोजक",
+    state: "राज्य",
+    allStates: "सभी राज्य और केंद्र शासित प्रदेश",
+    evaluate: "सभी मिलती योजनाएं जांचें",
+    tickerLabel: "लोकप्रिय ठगी अलर्ट",
+  },
+  mr: {
+    language: "भाषा",
+    tagline: "सायबर सुरक्षा आणि नागरिक सेवांसाठी एक व्यासपीठ",
+    emergency: "आपत्कालीन सेवा",
+    ai: "एआय सहाय्यक आणि योजना",
+    complaints: "तक्रारी आणि गाऱ्हाणी",
+    security: "सुरक्षा साधने आणि ऑडिट",
+    academy: "सायबर जागरूकता अकादमी",
+    schemeFinder: "योजना पात्रता शोधक",
+    state: "राज्य",
+    allStates: "सर्व राज्ये आणि केंद्रशासित प्रदेश",
+    evaluate: "सर्व जुळणाऱ्या योजना तपासा",
+    tickerLabel: "ट्रेंडिंग फसवणूक सूचना",
+  },
+} as const;
+
+const translatedEmergencyLabels = {
+  en: ["Unified Emergency Response", "Cybercrime Financial Fraud Helpline", "Child Helpline", "Women Safety Helpline", "National Consumer Helpline"],
+  hi: ["एकीकृत आपातकालीन प्रतिक्रिया", "साइबर अपराध वित्तीय धोखाधड़ी हेल्पलाइन", "बाल हेल्पलाइन", "महिला सुरक्षा हेल्पलाइन", "राष्ट्रीय उपभोक्ता हेल्पलाइन"],
+  mr: ["एकत्रित आपत्कालीन प्रतिसाद", "सायबर गुन्हे आर्थिक फसवणूक हेल्पलाइन", "बाल हेल्पलाइन", "महिला सुरक्षा हेल्पलाइन", "राष्ट्रीय ग्राहक हेल्पलाइन"],
+} as const;
 
 const academyQuizQuestions: QuizQuestion[] = [
   {
@@ -189,6 +265,8 @@ export default function Home() {
     return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   });
   const isDark = theme === "dark";
+  const [language, setLanguage] = useState<Language>("en");
+  const text = translations[language];
 
   const [activeTab, setActiveTab] = useState<TabId>("emergency");
   const [panicShortcut, setPanicShortcut] = useState(false);
@@ -210,6 +288,7 @@ export default function Home() {
 
   const [schemeAge, setSchemeAge] = useState("");
   const [schemeIncome, setSchemeIncome] = useState("");
+  const [schemeState, setSchemeState] = useState("");
   const [selectedSchemeName, setSelectedSchemeName] = useState<string | null>(null);
   const [matchingSchemeNames, setMatchingSchemeNames] = useState<string[] | null>(null);
   const [schemeEvaluation, setSchemeEvaluation] = useState("");
@@ -260,11 +339,14 @@ export default function Home() {
     [selectedSchemeName],
   );
   const visibleSchemes = useMemo(() => {
+    const stateFiltered = schemeCards.filter((scheme) =>
+      scheme.central || !scheme.relevantStates || !schemeState || scheme.relevantStates.includes(schemeState),
+    );
     if (!matchingSchemeNames) {
-      return schemeCards;
+      return stateFiltered;
     }
-    return schemeCards.filter((scheme) => matchingSchemeNames.includes(scheme.name));
-  }, [matchingSchemeNames]);
+    return stateFiltered.filter((scheme) => matchingSchemeNames.includes(scheme.name));
+  }, [matchingSchemeNames, schemeState]);
 
   const scrollToSection = (tab: TabId) => {
     const section = document.getElementById(tab);
@@ -490,7 +572,10 @@ Apply: ${scheme.applyUrl}`,
     }
     setSchemeError(null);
 
-    const matched = schemeCards.filter((scheme) => age >= scheme.minAge && income <= scheme.maxIncome);
+    const matched = schemeCards.filter((scheme) => {
+      const appliesToState = scheme.central || !scheme.relevantStates || !schemeState || scheme.relevantStates.includes(schemeState);
+      return appliesToState && age >= scheme.minAge && income <= scheme.maxIncome;
+    });
     setMatchingSchemeNames(matched.map((scheme) => scheme.name));
     if (matched.length === 0) {
       setSchemeEvaluation("No scheme criteria matches this matrix.");
@@ -554,8 +639,21 @@ Apply: ${scheme.applyUrl}`,
       >
         <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-4">
           <div className="text-xl font-extrabold tracking-wide text-[#FF9933]">Bharat App</div>
-          <p className="text-xs text-gray-400 hidden md:block">One Platform for Cyber Safety & Citizen Services</p>
+          <p className="text-xs text-gray-400 hidden md:block">{text.tagline}</p>
           <VisitorCounter />
+          <label className="flex items-center gap-2 text-xs font-semibold">
+            <span className="sr-only">{text.language}</span>
+            <select
+              value={language}
+              onChange={(event) => setLanguage(event.target.value as Language)}
+              aria-label={text.language}
+              className={`rounded-full border px-3 py-2 ${isDark ? "border-white/15 bg-[#122A4D] text-[#ECF2FA]" : "border-[#0B1F3A]/15 bg-white text-[#111E30]"}`}
+            >
+              <option value="en">English</option>
+              <option value="hi">हिंदी</option>
+              <option value="mr">मराठी</option>
+            </select>
+          </label>
           <button
             type="button"
             onClick={() => setTheme(isDark ? "light" : "dark")}
@@ -584,7 +682,7 @@ Apply: ${scheme.applyUrl}`,
             className={getTabClass("emergency", "emergency")}
           >
             <i className="fa-solid fa-heart-pulse" aria-hidden="true" />
-            Emergency Services
+            {text.emergency}
           </a>
           <a
             href="#ai"
@@ -595,7 +693,7 @@ Apply: ${scheme.applyUrl}`,
             className={getTabClass("ai")}
           >
             <i className="fa-solid fa-robot" aria-hidden="true" />
-            AI Companion & Schemes
+            {text.ai}
           </a>
           <a
             href="#complaints"
@@ -606,7 +704,7 @@ Apply: ${scheme.applyUrl}`,
             className={getTabClass("complaints")}
           >
             <i className="fa-solid fa-file-invoice" aria-hidden="true" />
-            Complaints & Grievances
+            {text.complaints}
           </a>
           <a
             href="#security"
@@ -617,7 +715,7 @@ Apply: ${scheme.applyUrl}`,
             className={getTabClass("security", "security")}
           >
             <i className="fa-solid fa-screwdriver-wrench" aria-hidden="true" />
-            Security Tools & Audit
+            {text.security}
           </a>
           <a
             href="#academy"
@@ -628,12 +726,24 @@ Apply: ${scheme.applyUrl}`,
             className={getTabClass("academy")}
           >
             <i className="fa-solid fa-graduation-cap" aria-hidden="true" />
-            Cyber Awareness Academy
+            {text.academy}
           </a>
         </div>
       </nav>
 
       <main id="main-content" tabIndex={-1} className="mx-auto w-full max-w-6xl space-y-8 px-5 py-8 md:px-8">
+        <section
+          aria-label={text.tickerLabel}
+          className={`scam-ticker overflow-hidden rounded-xl border ${
+            isDark ? "border-[#d93838]/50 bg-[#2a1118]" : "border-[#d93838]/30 bg-[#fff2f2]"
+          }`}
+        >
+          <div className="scam-ticker-track flex w-max gap-10 whitespace-nowrap px-5 py-3 text-sm font-bold text-[#ff8b8b]">
+            {[...scamWarnings, ...scamWarnings].map((warning, index) => (
+              <span key={`${warning}-${index}`}>{warning}</span>
+            ))}
+          </div>
+        </section>
         <EmergencyErrorBoundary>
           <section
             id="emergency"
@@ -641,7 +751,7 @@ Apply: ${scheme.applyUrl}`,
               isDark ? "border-white/10 bg-[#0A1424]" : "border-[#0B1F3A]/10 bg-white"
             }`}
           >
-            <h2 className="mb-4 text-2xl font-bold">Emergency Services</h2>
+            <h2 className="mb-4 text-2xl font-bold">{text.emergency}</h2>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {emergencyContacts.map((item) => (
                 <div
@@ -651,7 +761,7 @@ Apply: ${scheme.applyUrl}`,
                   }`}
                 >
                   <p className="text-3xl font-extrabold text-[#FF9933]">{item.number}</p>
-                  <p className="mt-1 text-sm">{item.label}</p>
+                  <p className="mt-1 text-sm">{translatedEmergencyLabels[language][emergencyContacts.indexOf(item)]}</p>
                   <a aria-label={`Call ${item.label} at ${item.number}`} href={`tel:${item.number.replace(/\D/g, "")}`} className="mt-3 inline-block bg-red-600 text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-red-700">Call Now</a>
                   {item.websiteUrl ? (
                     <a
@@ -678,7 +788,7 @@ Apply: ${scheme.applyUrl}`,
             isDark ? "border-white/10 bg-[#0A1424]" : "border-[#0B1F3A]/10 bg-white"
           }`}
         >
-          <h2 className="mb-4 text-2xl font-bold">AI Companion & Schemes</h2>
+          <h2 className="mb-4 text-2xl font-bold">{text.ai}</h2>
           <div className="grid gap-6 lg:grid-cols-2">
             <div
               className={`rounded-xl border p-4 ${
@@ -744,7 +854,7 @@ Apply: ${scheme.applyUrl}`,
                 isDark ? "border-white/10 bg-[#122A4D]" : "border-[#0B1F3A]/10 bg-[#F9FBFF]"
               }`}
             >
-              <h3 className="mb-3 text-lg font-bold">Scheme Eligibility Finder</h3>
+              <h3 className="mb-3 text-lg font-bold">{text.schemeFinder}</h3>
               <div className="grid gap-2 sm:grid-cols-2">
                 <input
                   type="number"
@@ -776,13 +886,32 @@ Apply: ${scheme.applyUrl}`,
                   }`}
                   placeholder="Annual income (₹)"
                 />
+                <select
+                  value={schemeState}
+                  onChange={(event) => {
+                    setSchemeState(event.target.value);
+                    setMatchingSchemeNames(null);
+                    setSelectedSchemeName(null);
+                  }}
+                  aria-label={text.state}
+                  className={`rounded-lg border px-3 py-2 ${
+                    isDark
+                      ? "border-white/20 bg-[#050B14] text-[#ECF2FA]"
+                      : "border-[#0B1F3A]/20 bg-white text-[#111E30]"
+                  }`}
+                >
+                  <option value="">{text.allStates}</option>
+                  {indianStatesAndUnionTerritories.map((state) => (
+                    <option key={state} value={state}>{state}</option>
+                  ))}
+                </select>
               </div>
               <button
                 type="button"
                 onClick={runSchemeEligibility}
                 className="mt-3 rounded-full bg-[#0B1F3A] px-4 py-2 text-sm font-semibold text-white"
               >
-                Evaluate All Matching Schemes
+                {text.evaluate}
               </button>
               {schemeError ? <p className="mt-2 text-sm text-[#ffb0b0]">{schemeError}</p> : null}
 
@@ -845,7 +974,7 @@ Apply: ${scheme.applyUrl}`,
             isDark ? "border-white/10 bg-[#0A1424]" : "border-[#0B1F3A]/10 bg-white"
           }`}
         >
-          <h2 className="mb-4 text-2xl font-bold">Complaints & Grievances</h2>
+          <h2 className="mb-4 text-2xl font-bold">{text.complaints}</h2>
           <label htmlFor="complaint-input" className="mb-2 block text-sm font-semibold">
             Describe your complaint
           </label>
@@ -930,7 +1059,7 @@ Apply: ${scheme.applyUrl}`,
             isDark ? "border-white/10 bg-[#0A1424]" : "border-[#0B1F3A]/10 bg-white"
           }`}
         >
-          <h2 className="mb-3 text-2xl font-bold">Security Tools & Audit</h2>
+          <h2 className="mb-3 text-2xl font-bold">{text.security}</h2>
           <p className="mb-4 text-sm opacity-90">
             Password checks, malicious URL scanner, SHA-256 hash checks, and breach verification.
           </p>
@@ -948,7 +1077,7 @@ Apply: ${scheme.applyUrl}`,
             isDark ? "border-white/10 bg-[#0A1424]" : "border-[#0B1F3A]/10 bg-white"
           }`}
         >
-          <h2 className="mb-4 text-2xl font-bold">Cyber Awareness Academy</h2>
+          <h2 className="mb-4 text-2xl font-bold">{text.academy}</h2>
           <CommunityScamAlerts />
           {quizCompletedScore === null ? (
             <>

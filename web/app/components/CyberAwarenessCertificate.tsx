@@ -80,9 +80,20 @@ function drawCertificate(name: string, score: number, total: number, badge: Badg
   context.fillText(`${badge.icon} ${badge.title}`, canvas.width / 2, 710);
   context.fillStyle = "#C8D5EA";
   context.font = "28px Arial";
-  context.fillText(new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }), canvas.width / 2, 820);
-  context.fillStyle = "#128807";
-  context.fillRect(540, 875, 520, 8);
+  context.fillText(new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }), 390, 865);
+
+  context.strokeStyle = "#C8D5EA";
+  context.lineWidth = 2;
+  context.beginPath();
+  context.moveTo(1080, 785);
+  context.lineTo(1460, 785);
+  context.stroke();
+  context.fillStyle = "#FF9933";
+  context.font = "italic 58px 'Brush Script MT', 'Segoe Script', cursive";
+  context.fillText("Kunal Kushwaha", 1270, 850);
+  context.fillStyle = "#C8D5EA";
+  context.font = "22px Arial";
+  context.fillText("Founder, Bharat App", 1270, 895);
 
   return canvas;
 }
