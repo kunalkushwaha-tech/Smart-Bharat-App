@@ -25,11 +25,20 @@ type EmergencyContact = {
 type Scheme = {
   name: string;
   minAge: number;
-  maxIncome: number;
+  maxAge?: number;
+  maxIncome: number | null;
   detail: string;
+  eligibility: string;
   applyUrl: string;
   central?: boolean;
   relevantStates?: string[];
+};
+type ComplaintHistoryItem = {
+  id: string;
+  label: string;
+  timestamp: string;
+  output: string;
+  analysis: string;
 };
 type Language = "en" | "hi" | "mr";
 type QuizQuestion = {
@@ -71,6 +80,7 @@ const schemeCards: Scheme[] = [
     minAge: 18,
     maxIncome: 300000,
     detail: "Farmers can receive up to ₹6,000 per year in three instalments, paid directly into their bank account.",
+    eligibility: "Age 18+; eligible landholding farmer families, subject to scheme exclusions.",
     applyUrl: "https://pmkisan.gov.in",
     central: true,
   },
@@ -79,6 +89,7 @@ const schemeCards: Scheme[] = [
     minAge: 16,
     maxIncome: 250000,
     detail: "Financial help for eligible students from some communities to continue their studies after school.",
+    eligibility: "Age and income limits vary by community/category; this finder uses the commonly published ₹2.5 lakh annual family-income ceiling.",
     applyUrl: "https://scholarships.gov.in",
     central: true,
   },
@@ -87,10 +98,69 @@ const schemeCards: Scheme[] = [
     minAge: 18,
     maxIncome: 150000,
     detail: "Rural households can get up to 100 days of paid work in a year. Ask your Gram Panchayat to apply.",
+    eligibility: "Age 18+; adult members of rural households willing to do unskilled manual work.",
     applyUrl: "https://nrega.nic.in",
     central: true,
   },
+  {
+    name: "Ayushman Bharat (PM-JAY)",
+    minAge: 0,
+    maxIncome: null,
+    detail: "Eligible poor and vulnerable families get cashless hospital treatment cover of up to ₹5 lakh per family per year. All citizens aged 70+ are also covered without an income limit.",
+    eligibility: "No fixed age or income ceiling for SECC-identified families; all citizens aged 70+ are eligible regardless of income.",
+    applyUrl: "https://beneficiary.nha.gov.in",
+    central: true,
+  },
+  {
+    name: "PM Awas Yojana",
+    minAge: 18,
+    maxIncome: 1800000,
+    detail: "Eligible families without a pucca house can get housing support. Urban income bands run from EWS up to ₹3 lakh, LIG up to ₹6 lakh, and MIG up to ₹18 lakh; rural eligibility is based on housing deprivation.",
+    eligibility: "Usually an adult household applicant who does not own a pucca house; urban annual household income up to ₹18 lakh, with rural eligibility based on housing deprivation.",
+    applyUrl: "https://pmaymis.gov.in",
+    central: true,
+  },
+  {
+    name: "Sukanya Samriddhi Yojana",
+    minAge: 0,
+    maxAge: 10,
+    maxIncome: null,
+    detail: "A parent or guardian can open a savings account for a girl child below age 10. Deposits earn government-notified interest, receive tax benefits, and the account matures after 21 years.",
+    eligibility: "Girl child must be below 10 when the account opens; normally up to two accounts per family. No income limit.",
+    applyUrl: "https://www.indiapost.gov.in",
+    central: true,
+  },
+  {
+    name: "PM Ujjwala Yojana",
+    minAge: 18,
+    maxIncome: null,
+    detail: "Women aged 18+ in eligible deprived or poor households can receive an LPG connection with government assistance for the connection and initial setup.",
+    eligibility: "Woman aged 18+ from an eligible poor/deprived household with no existing LPG connection in the household; no single universal income ceiling.",
+    applyUrl: "https://www.pmuy.gov.in",
+    central: true,
+  },
+  {
+    name: "National Pension System (NPS)",
+    minAge: 18,
+    maxAge: 70,
+    maxIncome: null,
+    detail: "Indian citizens can build a retirement corpus through voluntary contributions. NPS offers retirement savings and tax benefits; returns depend on market-linked investments.",
+    eligibility: "Indian citizen or eligible resident aged 18–70; no income limit and contributions are voluntary.",
+    applyUrl: "https://enps.nsdl.com",
+    central: true,
+  },
+  {
+    name: "Stand-Up India",
+    minAge: 18,
+    maxIncome: null,
+    detail: "Banks can provide loans of ₹10 lakh to ₹1 crore to SC/ST or women entrepreneurs for a new Greenfield business in manufacturing, services, trading, or allied agriculture.",
+    eligibility: "SC/ST or woman entrepreneur aged 18+; for a new Greenfield enterprise. No income limit, but bank credit assessment applies.",
+    applyUrl: "https://www.standupmitra.in",
+    central: true,
+  },
 ];
+
+const COMPLAINT_HISTORY_KEY = "bharat-app-complaint-history";
 
 const indianStatesAndUnionTerritories = [
   "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat",
@@ -282,6 +352,7 @@ export default function Home() {
   const [complaintInput, setComplaintInput] = useState("");
   const [complaintOutput, setComplaintOutput] = useState("");
   const [complaintAnalysis, setComplaintAnalysis] = useState("");
+  const [complaintHistory, setComplaintHistory] = useState<ComplaintHistoryItem[]>([]);
   const [complaintError, setComplaintError] = useState<string | null>(null);
 
   const [schemeAge, setSchemeAge] = useState("");
@@ -311,6 +382,27 @@ export default function Home() {
       localStorage.setItem("theme", theme);
     }
   }, [theme, themeInitialized]);
+
+  useEffect(() => {
+    const savedHistory = localStorage.getItem(COMPLAINT_HISTORY_KEY);
+    if (!savedHistory) return;
+    try {
+      const parsed = JSON.parse(savedHistory) as unknown;
+      if (Array.isArray(parsed)) {
+        setComplaintHistory(parsed.filter((item): item is ComplaintHistoryItem => (
+          typeof item === "object"
+          && item !== null
+          && typeof (item as ComplaintHistoryItem).id === "string"
+          && typeof (item as ComplaintHistoryItem).label === "string"
+          && typeof (item as ComplaintHistoryItem).timestamp === "string"
+          && typeof (item as ComplaintHistoryItem).output === "string"
+          && typeof (item as ComplaintHistoryItem).analysis === "string"
+        )));
+      }
+    } catch (error: unknown) {
+      console.warn("Could not restore complaint history from local storage.", error);
+    }
+  }, []);
 
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get("panic") !== "true") return;
@@ -446,7 +538,19 @@ export default function Home() {
       return;
     }
     setComplaintError(null);
-    setComplaintOutput(buildComplaintDraft(text));
+    const output = buildComplaintDraft(text);
+    const timestamp = new Date();
+    const nextItem: ComplaintHistoryItem = {
+      id: `${timestamp.getTime()}-${Math.random().toString(36).slice(2, 8)}`,
+      label: `Complaint #${complaintHistory.length + 1} - ${timestamp.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`,
+      timestamp: timestamp.toISOString(),
+      output,
+      analysis: complaintAnalysis,
+    };
+    const nextHistory = [nextItem, ...complaintHistory];
+    setComplaintOutput(output);
+    setComplaintHistory(nextHistory);
+    localStorage.setItem(COMPLAINT_HISTORY_KEY, JSON.stringify(nextHistory));
   };
 
   const runAIComplaintAnalyzer = () => {
@@ -544,6 +648,18 @@ Computed Severity Score: ${score}/100`,
     setComplaintError(null);
   };
 
+  const viewComplaintHistoryItem = (item: ComplaintHistoryItem) => {
+    setComplaintOutput(item.output);
+    setComplaintAnalysis(item.analysis);
+    setComplaintError(null);
+  };
+
+  const clearComplaintHistory = () => {
+    setComplaintHistory([]);
+    localStorage.removeItem(COMPLAINT_HISTORY_KEY);
+    setComplaintError(null);
+  };
+
   const evaluateSchemeFor = (scheme: Scheme) => {
     const age = Number.parseInt(schemeAge, 10);
     const income = Number.parseInt(schemeIncome, 10);
@@ -552,7 +668,7 @@ Computed Severity Score: ${score}/100`,
       setSchemeEvaluation(
         `${scheme.name}
 Detail: ${scheme.detail}
-Eligibility Rule: Age >= ${scheme.minAge}, Income <= ₹${scheme.maxIncome.toLocaleString("en-IN")}
+Eligibility Rule: ${scheme.eligibility}
 Apply: ${scheme.applyUrl}
 Status: Awaiting profile input (enter age + annual income).`,
       );
@@ -560,10 +676,12 @@ Status: Awaiting profile input (enter age + annual income).`,
     }
     setSchemeError(null);
 
-    const eligible = age >= scheme.minAge && income <= scheme.maxIncome;
+    const eligible = age >= scheme.minAge
+      && (scheme.maxAge === undefined || age <= scheme.maxAge)
+      && (scheme.maxIncome === null || income <= scheme.maxIncome);
     setSchemeEvaluation(
       `${scheme.name}
-Eligibility Rule: Age >= ${scheme.minAge}, Income <= ₹${scheme.maxIncome.toLocaleString("en-IN")}
+Eligibility Rule: ${scheme.eligibility}
 Your Profile: Age ${age}, Income ₹${income.toLocaleString("en-IN")}
 Status: ${eligible ? "Eligible ✅" : "Not Eligible ❌"}
 Detail: ${scheme.detail}
@@ -584,7 +702,10 @@ Apply: ${scheme.applyUrl}`,
 
     const matched = schemeCards.filter((scheme) => {
       const appliesToState = scheme.central || !scheme.relevantStates || !schemeState || scheme.relevantStates.includes(schemeState);
-      return appliesToState && age >= scheme.minAge && income <= scheme.maxIncome;
+      return appliesToState
+        && age >= scheme.minAge
+        && (scheme.maxAge === undefined || age <= scheme.maxAge)
+        && (scheme.maxIncome === null || income <= scheme.maxIncome);
     });
     setMatchingSchemeNames(matched.map((scheme) => scheme.name));
     if (matched.length === 0) {
@@ -601,7 +722,7 @@ Apply: ${scheme.applyUrl}`,
     const summary = matched
       .map(
         (scheme) =>
-          `${scheme.name}: Eligible ✅ (Age >= ${scheme.minAge}, Income <= ₹${scheme.maxIncome.toLocaleString("en-IN")})`,
+          `${scheme.name}: Eligible ✅ (${scheme.eligibility})`,
       )
       .join("\n");
     setSchemeEvaluation(summary);
@@ -949,8 +1070,7 @@ Apply: ${scheme.applyUrl}`,
                     <p className="font-bold">{scheme.name}</p>
                     <p className="text-sm opacity-85">{scheme.detail}</p>
                     <p className="mt-1 text-xs opacity-75">
-                      Criteria: Age {scheme.minAge}+ | Income up to ₹
-                      {scheme.maxIncome.toLocaleString("en-IN")}
+                      Criteria: {scheme.eligibility}
                     </p>
                     <a
                       href={scheme.applyUrl}
@@ -1066,6 +1186,64 @@ Apply: ${scheme.applyUrl}`,
               {complaintAnalysis}
             </pre>
           ) : null}
+
+          <div className={`mt-6 rounded-xl border p-4 ${
+            isDark ? "border-white/10 bg-[#122A4D]" : "border-[#0B1F3A]/10 bg-[#F9FBFF]"
+          }`}>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 className="font-bold">My Complaints</h3>
+                <p className="text-xs opacity-75">Local-only history. These formatted complaints are stored in this browser and are not synced to any server.</p>
+              </div>
+              {complaintHistory.length > 0 ? (
+                <button
+                  type="button"
+                  onClick={clearComplaintHistory}
+                  className="rounded-full border border-[#d93838] px-3 py-1 text-xs font-semibold text-[#ffb0b0]"
+                >
+                  Clear History
+                </button>
+              ) : null}
+            </div>
+            {complaintHistory.length > 0 ? (
+              <div className="mt-3 grid gap-2">
+                {complaintHistory.map((item) => (
+                  <div
+                    key={item.id}
+                    className={`flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3 ${
+                      isDark ? "border-white/10 bg-[#0A1424]" : "border-[#0B1F3A]/10 bg-white"
+                    }`}
+                  >
+                    <div>
+                      <p className="text-sm font-semibold">{item.label}</p>
+                      <p className="text-xs opacity-70">{new Date(item.timestamp).toLocaleString("en-IN")}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => viewComplaintHistoryItem(item)}
+                        className="rounded-full bg-[#0B1F3A] px-3 py-1 text-xs font-semibold text-white"
+                      >
+                        View
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          viewComplaintHistoryItem(item);
+                          window.setTimeout(downloadComplaintAsText, 0);
+                        }}
+                        className="rounded-full bg-[#FF9933] px-3 py-1 text-xs font-semibold text-white"
+                      >
+                        Download TXT
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-3 text-sm opacity-75">No formatted complaints saved yet.</p>
+            )}
+          </div>
         </section>
 
         <section
