@@ -1,4 +1,4 @@
-const VERSION = "bharat-app-v2";
+const VERSION = "bharat-app-v3";
 const CACHE_NAME = `${VERSION}-app`;
 const APP_SHELL = ["/", "/~offline", "/manifest.json"];
 

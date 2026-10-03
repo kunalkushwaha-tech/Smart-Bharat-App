@@ -18,6 +18,7 @@ type ChatMessage = { role: "user" | "bot"; text: string };
 type EmergencyContact = {
   number: string;
   label: string;
+  icon: string;
   websiteUrl?: string;
   websiteLabel?: string;
 };
@@ -37,25 +38,28 @@ type QuizQuestion = {
 };
 
 const emergencyContacts: EmergencyContact[] = [
-  { number: "112", label: "Unified Emergency Response" },
-  { number: "108", label: "Ambulance Emergency Services" },
-  { number: "101", label: "Fire Emergency Services" },
+  { number: "112", label: "Unified Emergency Response", icon: "🚓" },
+  { number: "108", label: "Ambulance Emergency Services", icon: "🚑" },
+  { number: "101", label: "Fire Emergency Services", icon: "🔥" },
   {
     number: "1930",
     label: "Cybercrime Financial Fraud Helpline",
+    icon: "💳",
     websiteUrl: "https://cybercrime.gov.in",
     websiteLabel: "cybercrime.gov.in",
   },
   {
     number: "1098",
     label: "Child Helpline",
+    icon: "👶",
     websiteUrl: "https://www.childlineindia.org",
     websiteLabel: "childlineindia.org",
   },
-  { number: "181", label: "Women Safety Helpline" },
+  { number: "181", label: "Women Safety Helpline", icon: "👩" },
   {
   number: "1915",
   label: "National Consumer Helpline",
+  icon: "🛒",
   websiteUrl: "https://consumerhelpline.gov.in",
   websiteLabel: " consumerhelpline.gov.in",
 },
@@ -256,16 +260,8 @@ Sovereign Resident Node.`;
 }
 
 export default function Home() {
-  const [theme, setTheme] = useState<Theme>(() => {
-    if (typeof window === "undefined") {
-      return "dark";
-    }
-    const savedTheme = localStorage.getItem("theme");
-    if (savedTheme === "dark" || savedTheme === "light") {
-      return savedTheme;
-    }
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-  });
+  const [theme, setTheme] = useState<Theme>("dark");
+  const [themeInitialized, setThemeInitialized] = useState(false);
   const isDark = theme === "dark";
   const [language, setLanguage] = useState<Language>("en");
   const text = translations[language];
@@ -301,8 +297,20 @@ export default function Home() {
   const [quizCompletedScore, setQuizCompletedScore] = useState<number | null>(null);
 
   useEffect(() => {
-    localStorage.setItem("theme", theme);
-  }, [theme]);
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme === "dark" || savedTheme === "light") {
+      setTheme(savedTheme);
+    } else {
+      setTheme(window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    }
+    setThemeInitialized(true);
+  }, []);
+
+  useEffect(() => {
+    if (themeInitialized) {
+      localStorage.setItem("theme", theme);
+    }
+  }, [theme, themeInitialized]);
 
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get("panic") !== "true") return;
@@ -762,19 +770,24 @@ Apply: ${scheme.applyUrl}`,
                     isDark ? "border-white/10 bg-[#122A4D]" : "border-[#0B1F3A]/10 bg-[#F9FBFF]"
                   }`}
                 >
-                  <p className="text-3xl font-extrabold text-[#FF9933]">{item.number}</p>
+                  <p className="text-3xl font-extrabold text-[#FF9933]">
+                    <span aria-hidden="true">{item.icon}</span>{" "}
+                    <span>{item.number}</span>
+                  </p>
                   <p className="mt-1 text-sm">{translatedEmergencyLabels[language][emergencyContacts.indexOf(item)]}</p>
-                  <a aria-label={`Call ${item.label} at ${item.number}`} href={`tel:${item.number.replace(/\D/g, "")}`} className="mt-3 inline-block bg-red-600 text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-red-700">Call Now</a>
-                  {item.websiteUrl ? (
-                    <a
-                      href={item.websiteUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-2 inline-flex text-xs font-semibold text-[#FF9933] underline"
-                    >
-                      Official: {item.websiteLabel}
-                    </a>
-                  ) : null}
+                  <div className="mt-3 flex flex-wrap items-center gap-3">
+                    <a aria-label={`Call ${item.label} at ${item.number}`} href={`tel:${item.number.replace(/\D/g, "")}`} className="inline-block bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 rounded-full">Call Now</a>
+                    {item.websiteUrl ? (
+                      <a
+                        href={item.websiteUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex text-xs font-semibold text-[#FF9933] underline"
+                      >
+                        Official: {item.websiteLabel}
+                      </a>
+                    ) : null}
+                  </div>
                 </div>
               ))}
             </div>

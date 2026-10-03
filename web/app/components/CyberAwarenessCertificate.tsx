@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 
 type CyberAwarenessCertificateProps = {
@@ -43,9 +43,14 @@ function getBadgeTier(score: number, total: number): BadgeTier {
 }
 
 function createCertificateId() {
-  const randomPart = Math.random().toString(36).slice(2, 6).toUpperCase();
+  const randomValues = new Uint32Array(2);
+  crypto.getRandomValues(randomValues);
+  const randomPart = Array.from(randomValues)
+    .map((value) => value.toString(36).toUpperCase().slice(-4))
+    .join("")
+    .slice(0, 8);
   const datePart = new Date().toISOString().slice(0, 10).replaceAll("-", "");
-  return `BHRT-CYB-${randomPart}-${datePart}`;
+  return `BHRT-CYB-${randomPart.slice(0, 4)}-${randomPart.slice(4)}-${datePart}`;
 }
 
 function drawEmblem(context: CanvasRenderingContext2D, x: number, y: number) {
@@ -55,21 +60,21 @@ function drawEmblem(context: CanvasRenderingContext2D, x: number, y: number) {
   context.strokeStyle = "#FF9933";
   context.lineWidth = 5;
   context.beginPath();
-  context.arc(0, 0, 78, 0, Math.PI * 2);
+  context.arc(0, 0, 62, 0, Math.PI * 2);
   context.fill();
   context.stroke();
   context.fillStyle = "#050B14";
   context.beginPath();
-  context.moveTo(0, -42);
+  context.moveTo(0, -34);
   for (let point = 1; point < 10; point += 1) {
     const angle = -Math.PI / 2 + (point * Math.PI) / 5;
-    const radius = point % 2 === 0 ? 42 : 18;
+    const radius = point % 2 === 0 ? 34 : 15;
     context.lineTo(Math.cos(angle) * radius, Math.sin(angle) * radius);
   }
   context.closePath();
   context.fill();
   context.fillStyle = "#050B14";
-  context.font = "bold 15px Arial";
+  context.font = "bold 12px Arial";
   context.textAlign = "center";
   context.fillText("BHARAT APP", 0, 58);
   context.restore();
@@ -83,7 +88,7 @@ async function drawCertificate(
   certificateId: string,
 ) {
   const verificationUrl = `https://smartbharat.me/verify?id=${encodeURIComponent(certificateId)}`;
-  const qrDataUrl = await QRCode.toDataURL(verificationUrl, { width: 180, margin: 1 });
+  const qrDataUrl = await QRCode.toDataURL(verificationUrl, { width: 120, margin: 1 });
   const canvas = document.createElement("canvas");
   canvas.width = 1600;
   canvas.height = 1000;
@@ -105,7 +110,7 @@ async function drawCertificate(
   context.fillStyle = "#FF9933";
   context.font = "bold 42px Arial";
   context.fillText("BHARAT APP", canvas.width / 2, 170);
-  drawEmblem(context, 1390, 165);
+  drawEmblem(context, 1390, 155);
   context.fillStyle = "#ECF2FA";
   context.font = "bold 78px Georgia";
   context.fillText("Certificate of Completion", canvas.width / 2, 300);
@@ -117,13 +122,14 @@ async function drawCertificate(
   context.fillText(name, canvas.width / 2, 535);
   context.fillStyle = "#ECF2FA";
   context.font = "bold 34px Arial";
-  context.fillText(`Scored ${score}/${total}`, canvas.width / 2, 625);
+  const percentage = Math.round((score / total) * 100);
+  context.fillText(`Scored ${score}/${total} (${percentage}%)`, canvas.width / 2, 625);
   context.fillStyle = "#D4AF37";
   context.font = "bold 36px Arial";
   context.fillText(`${badge.icon} ${badge.title}`, canvas.width / 2, 710);
   context.fillStyle = "#C8D5EA";
   context.font = "28px Arial";
-  context.fillText(new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }), 390, 865);
+  context.fillText(new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }), 390, 815);
 
   context.strokeStyle = "#C8D5EA";
   context.lineWidth = 2;
@@ -143,14 +149,14 @@ async function drawCertificate(
     qrImage.onload = () => resolve();
     qrImage.onerror = () => reject(new Error("Certificate QR code could not be loaded."));
   });
-  context.drawImage(qrImage, 110, 740, 180, 180);
+  context.drawImage(qrImage, 110, 775, 120, 120);
   context.textAlign = "left";
   context.fillStyle = "#D4AF37";
   context.font = "bold 20px Arial";
-  context.fillText(`Certificate ID: ${certificateId}`, 330, 930);
+  context.fillText(`Certificate ID: ${certificateId}`, 300, 860);
   context.fillStyle = "#C8D5EA";
   context.font = "20px Arial";
-  context.fillText("Verify at smartbharat.me/verify", 330, 965);
+  context.fillText("Verify at smartbharat.me/verify", 300, 895);
 
   return canvas;
 }
@@ -158,8 +164,12 @@ async function drawCertificate(
 export default function CyberAwarenessCertificate({ score, total, onRestart }: CyberAwarenessCertificateProps) {
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [certificateId] = useState(createCertificateId);
+  const [certificateId, setCertificateId] = useState<string | null>(null);
   const badge = getBadgeTier(score, total);
+
+  useEffect(() => {
+    setCertificateId(createCertificateId());
+  }, []);
 
   function downloadCertificate() {
     const trimmedName = name.trim();
@@ -168,7 +178,11 @@ export default function CyberAwarenessCertificate({ score, total, onRestart }: C
       return;
     }
     setError(null);
-    void drawCertificate(trimmedName, score, total, badge, certificateId).then((canvas) => canvas.toBlob((blob) => {
+    const id = certificateId ?? createCertificateId();
+    if (!certificateId) {
+      setCertificateId(id);
+    }
+    void drawCertificate(trimmedName, score, total, badge, id).then((canvas) => canvas.toBlob((blob) => {
       if (!blob) {
         setError("Unable to create the certificate image. Please try again.");
         return;
