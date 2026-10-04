@@ -97,11 +97,25 @@ export default function URLScanner() {
               {JSON.stringify(result.safeBrowsing, null, 2)}
             </pre>
           </div>
+          <div>
+            <strong>VirusTotal:</strong>{' '}
+            {result.virusTotal.available && result.virusTotal.detectionRatio ? (
+              <span>
+                {result.virusTotal.detectionRatio.detected}/
+                {result.virusTotal.detectionRatio.total} security vendors flagged this URL
+              </span>
+            ) : (
+              <span className="text-[#C8D5EA]">
+                {result.virusTotal.message ?? 'VirusTotal check is unavailable.'}
+              </span>
+            )}
+          </div>
         </div>
       )}
 
       <div className="mt-3 text-sm text-[#C8D5EA]">
-        Note: Safe Browsing requires a server-side API key. If no key is configured, the server will return an explanatory message and heuristics above still apply.
+        Note: Safe Browsing and VirusTotal use server-side API keys. If VirusTotal is not configured,
+        the scanner continues with Safe Browsing and shows an availability note.
       </div>
       <div className="mt-6 border-t border-white/10 pt-4">
         <label className="mb-2 block font-medium text-[#ECF2FA]" htmlFor="upi-verifier">UPI ID verifier</label>
