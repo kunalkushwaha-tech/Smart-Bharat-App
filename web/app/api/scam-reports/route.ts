@@ -1,10 +1,24 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { getRequestFingerprint, isRateLimited } from "../../lib/rateLimit";
 import { corsPreflight, withCors } from "../../lib/cors";
 
 const allowedScamTypes = new Set(["UPI", "Phishing", "Fake Job", "Investment", "OTP", "Other"]);
 const contactPattern = /^(?:\+?[0-9][0-9\s().-]{6,19}|https?:\/\/[^\s]{1,200})$/i;
+
+function isValidContact(value: string) {
+  if (!contactPattern.test(value)) return false;
+  if (/^https?:\/\//i.test(value)) {
+    try {
+      const parsed = new URL(value);
+      return ["http:", "https:"].includes(parsed.protocol) && Boolean(parsed.hostname);
+    } catch {
+      return false;
+    }
+  }
+  return true;
+}
 
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -40,6 +54,7 @@ export async function GET(request: Request) {
     return withCors(NextResponse.json({ reports: data ?? [] }), request);
   } catch (error) {
     console.error("Failed to load scam reports", error);
+    Sentry.captureException(error, { tags: { tool: "scam-reports", operation: "list" } });
     return withCors(NextResponse.json({ error: "Something went wrong, please try again" }, { status: 500 }), request);
   }
 }
@@ -61,7 +76,7 @@ export async function POST(request: Request) {
       ? null
       : typeof body.description === "string" ? body.description.trim() : undefined;
 
-    if (!contactInfo || contactInfo.length > 200 || !contactPattern.test(contactInfo)
+    if (!contactInfo || contactInfo.length > 200 || !isValidContact(contactInfo)
       || !allowedScamTypes.has(scamType)
       || description === undefined || (description && description.length > 500)) {
       return withCors(NextResponse.json({ error: "Invalid report details" }, { status: 400 }), request);
@@ -76,6 +91,7 @@ export async function POST(request: Request) {
     return withCors(NextResponse.json({ ok: true }, { status: 201 }), request);
   } catch (error) {
     console.error("Failed to submit scam report", error);
+    Sentry.captureException(error, { tags: { tool: "scam-reports", operation: "submit" } });
     return withCors(NextResponse.json({ error: "Something went wrong, please try again" }, { status: 500 }), request);
   }
 }

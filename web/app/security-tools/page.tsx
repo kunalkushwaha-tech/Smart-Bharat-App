@@ -34,7 +34,7 @@ export default function SecurityToolsPage() {
       </section>
 <section className="mb-8">
   <h2 className="text-2xl font-semibold mb-2">Data Breach Timeline</h2>
-  <p className="mb-4 text-gray-600">Check if your email has been involved in any known data breaches.</p>
+  <p className="mb-4 text-gray-600">Check XposedOrNot&apos;s free breach database for your email. No API key is required.</p>
   <DataBreachTimeline />
 </section>
       <section className="mb-8">

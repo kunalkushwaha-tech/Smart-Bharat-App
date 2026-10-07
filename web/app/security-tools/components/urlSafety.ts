@@ -42,7 +42,7 @@ export function computeUrlHeuristics(url: URL) {
   return heuristics;
 }
 
-export async function runUrlSafetyScan(rawInput: string): Promise<UrlScanSummary> {
+export async function runUrlSafetyScan(rawInput: string, deepScan = false): Promise<UrlScanSummary> {
   let parsed: URL;
   try {
     parsed = normalizeUrl(rawInput);
@@ -54,12 +54,16 @@ export async function runUrlSafetyScan(rawInput: string): Promise<UrlScanSummary
   const response = await fetch("/api/safe-browsing", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ url: parsed.href }),
+    body: JSON.stringify({ url: parsed.href, deepScan }),
   });
   const responseBody = (await response.json()) as {
     virusTotal?: VirusTotalResult;
     [key: string]: unknown;
   };
+
+  if (!response.ok) {
+    throw new Error(typeof responseBody.error === "string" ? responseBody.error : "URL scan failed");
+  }
 
   return {
     parsedUrl: parsed.href,

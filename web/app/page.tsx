@@ -10,6 +10,7 @@ import CommunityScamAlerts from "./components/CommunityScamAlerts";
 import EmergencyErrorBoundary from "./components/EmergencyErrorBoundary";
 import SpeechInput from "./components/SpeechInput";
 import CyberAwarenessCertificate from "./components/CyberAwarenessCertificate";
+import PrivacyTrustBadge from "./components/PrivacyTrustBadge";
 
 
 type Theme = "light" | "dark";
@@ -338,6 +339,7 @@ export default function Home() {
 
   const [activeTab, setActiveTab] = useState<TabId>("emergency");
   const [panicShortcut, setPanicShortcut] = useState(false);
+  const [panicModeVisible, setPanicModeVisible] = useState(true);
 
   const [chatInput, setChatInput] = useState("");
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
@@ -354,6 +356,7 @@ export default function Home() {
   const [complaintAnalysis, setComplaintAnalysis] = useState("");
   const [complaintHistory, setComplaintHistory] = useState<ComplaintHistoryItem[]>([]);
   const [complaintError, setComplaintError] = useState<string | null>(null);
+  const [complaintDownloaded, setComplaintDownloaded] = useState(false);
 
   const [schemeAge, setSchemeAge] = useState("");
   const [schemeIncome, setSchemeIncome] = useState("");
@@ -410,6 +413,17 @@ export default function Home() {
     window.setTimeout(() => {
       document.getElementById("panic-mode")?.scrollIntoView({ behavior: "smooth", block: "center" });
     }, 0);
+  }, []);
+
+  useEffect(() => {
+    const panicMode = document.getElementById("panic-mode");
+    if (!panicMode) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setPanicModeVisible(Boolean(entry?.isIntersecting)),
+      { threshold: 0.1 },
+    );
+    observer.observe(panicMode);
+    return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
@@ -533,7 +547,7 @@ export default function Home() {
 
   const runAIComplaintWriter = () => {
     const text = complaintInput.trim();
-    if (!text) {
+    if (!text || text.length > 5000) {
       setComplaintError("Please enter complaint details.");
       return;
     }
@@ -555,7 +569,7 @@ export default function Home() {
 
   const runAIComplaintAnalyzer = () => {
     const text = complaintInput.trim();
-    if (!text) {
+    if (!text || text.length > 5000) {
       setComplaintError("Please enter complaint details.");
       return;
     }
@@ -621,6 +635,7 @@ Computed Severity Score: ${score}/100`,
     link.click();
     link.remove();
     URL.revokeObjectURL(fileUrl);
+    setComplaintDownloaded(true);
     setComplaintError(null);
   };
 
@@ -645,7 +660,12 @@ Computed Severity Score: ${score}/100`,
     popup.document.close();
     popup.focus();
     popup.print();
+    setComplaintDownloaded(true);
     setComplaintError(null);
+  };
+
+  const openCybercrimePortal = () => {
+    window.open("https://cybercrime.gov.in", "_blank", "noopener,noreferrer");
   };
 
   const viewComplaintHistoryItem = (item: ComplaintHistoryItem) => {
@@ -1165,6 +1185,15 @@ Apply: ${scheme.applyUrl}`,
               Download PDF
             </button>
           </div>
+          {complaintDownloaded ? (
+            <button
+              type="button"
+              onClick={openCybercrimePortal}
+              className="mt-3 inline-flex w-full items-center justify-center rounded-full bg-[#128807] px-5 py-3 text-center font-bold text-white shadow-lg hover:bg-[#0d6b05] sm:w-auto"
+            >
+              Go to Official Govt Cybercrime Portal (cybercrime.gov.in)
+            </button>
+          ) : null}
           {complaintError ? <p className="mt-2 text-sm text-[#ffb0b0]">{complaintError}</p> : null}
 
           {complaintOutput ? (
@@ -1325,6 +1354,9 @@ Apply: ${scheme.applyUrl}`,
         </section>
       </main>
       <footer className="mt-16 py-8 border-t border-gray-700 text-center text-gray-400">
+  <div className="mb-5 flex justify-center">
+    <PrivacyTrustBadge />
+  </div>
   <div className="flex justify-center gap-6 mb-3">
     <a href="/about" className="hover:text-white">About</a>
     <a href="/privacy" className="hover:text-white">Privacy Policy</a>
@@ -1334,6 +1366,16 @@ Apply: ${scheme.applyUrl}`,
   </div>
   <p className="text-sm">© 2026 Bharat App</p>
 </footer>
+      {!panicModeVisible ? (
+        <button
+          type="button"
+          onClick={() => document.getElementById("panic-mode")?.scrollIntoView({ behavior: "smooth", block: "center" })}
+          className="fixed bottom-5 right-5 z-40 rounded-full border border-red-300/50 bg-red-700 px-4 py-3 text-sm font-bold text-white shadow-lg transition hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-300"
+          aria-label="Scroll to Panic Mode"
+        >
+          🛡️ Panic Mode
+        </button>
+      ) : null}
     </div>
   );
 }

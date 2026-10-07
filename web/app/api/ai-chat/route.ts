@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { getRequestFingerprint, isRateLimited } from "../../lib/rateLimit";
 import { corsPreflight, withCors } from "../../lib/cors";
 
@@ -113,6 +114,7 @@ export async function POST(req: Request) {
     return withCors(NextResponse.json({ ok: true, reply }), req);
   } catch (error: unknown) {
     console.error("AI chat request failed", error);
+    Sentry.captureException(error, { tags: { tool: "ai-chat" } });
     return withCors(NextResponse.json({ error: "Something went wrong, please try again" }, { status: 500 }), req);
   }
 }

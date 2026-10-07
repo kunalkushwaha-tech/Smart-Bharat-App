@@ -6,6 +6,7 @@ import { updateCyberHygieneResults } from './cyberHygieneStorage';
 import ToolFeedback from './ToolFeedback';
 import RecentChecks from './RecentChecks';
 import { addToolHistory } from './toolActivity';
+import PrivacyTrustBadge from '../../components/PrivacyTrustBadge';
 
 export default function URLScanner() {
   const [url, setUrl] = useState('');
@@ -14,8 +15,9 @@ export default function URLScanner() {
   const [error, setError] = useState<string | null>(null);
   const [upi, setUpi] = useState('');
   const [upiResult, setUpiResult] = useState<string | null>(null);
+  const [deepScanning, setDeepScanning] = useState(false);
 
-  async function scan() {
+  async function scan(requestDeepScan = false) {
     setError(null);
     setResult(null);
     const u = url.trim();
@@ -26,7 +28,7 @@ export default function URLScanner() {
 
     setLoading(true);
     try {
-      const summary = await runUrlSafetyScan(u);
+      const summary = await runUrlSafetyScan(u, requestDeepScan);
       setResult(summary);
       const safeBrowsing = summary.safeBrowsing as { matches?: unknown[] } | null;
       updateCyberHygieneResults({
@@ -42,7 +44,13 @@ export default function URLScanner() {
       setError(message);
     } finally {
       setLoading(false);
+      setDeepScanning(false);
     }
+  }
+
+  function deepScan() {
+    setDeepScanning(true);
+    void scan(true);
   }
 
   function verifyUPI() {
@@ -68,7 +76,7 @@ export default function URLScanner() {
           onChange={(e) => setUrl(e.target.value)}
           placeholder="https://example.com"
         />
-        <button className="rounded bg-sky-600 px-4 py-2 text-white" onClick={scan} disabled={loading}>
+        <button className="rounded bg-sky-600 px-4 py-2 text-white" onClick={() => void scan()} disabled={loading}>
           {loading ? 'Scanning...' : 'Scan'}
         </button>
       </div>
@@ -110,12 +118,22 @@ export default function URLScanner() {
               </span>
             )}
           </div>
+          {!deepScanning && !result.virusTotal.available && (
+            <button
+              type="button"
+              className="rounded bg-indigo-600 px-3 py-2 text-sm text-white"
+              onClick={deepScan}
+              disabled={loading}
+            >
+              Deep Scan with VirusTotal
+            </button>
+          )}
         </div>
       )}
 
       <div className="mt-3 text-sm text-[#C8D5EA]">
-        Note: Safe Browsing and VirusTotal use server-side API keys. If VirusTotal is not configured,
-        the scanner continues with Safe Browsing and shows an availability note.
+        Note: Safe Browsing always runs first. VirusTotal runs only for a Deep Scan or when Safe
+        Browsing is unavailable. Results are cached for 48 hours.
       </div>
       <div className="mt-6 border-t border-white/10 pt-4">
         <label className="mb-2 block font-medium text-[#ECF2FA]" htmlFor="upi-verifier">UPI ID verifier</label>
@@ -134,6 +152,9 @@ export default function URLScanner() {
       </div>
       <ToolFeedback toolId="url" />
       <RecentChecks toolId="url" />
+      <div className="mt-4">
+        <PrivacyTrustBadge />
+      </div>
     </div>
   );
 }
