@@ -1,0 +1,23 @@
+ web/.env.local.example                             |   7 [32m+[m
+ web/.gitignore                                     |   1 [32m+[m
+ web/app/api/ai-chat/route.ts                       |  54 [32m+[m[31m--[m
+ web/app/api/whois/route.ts                         |  24 [32m+[m
+ web/app/components/FloatingAIChat.tsx              | 130 [32m++++++[m
+ web/app/components/NearbyServicesMap.tsx           | 193 [32m+++[m[31m-----[m
+ web/app/components/PanicMode.tsx                   | 146 [32m+++++++[m
+ web/app/hooks/useGeofencing.ts                     |  73 [32m++++[m
+ web/app/hooks/useGeolocationFallback.ts            | 179 [32m++++++++[m
+ web/app/hooks/useNearbyFinder.ts                   |  37 [32m++[m
+ web/app/layout.tsx                                 |  24 [32m+[m[31m-[m
+ web/app/lib/aiChat.ts                              |  25 [32m++[m
+ web/app/not-found.tsx                              |  14 [32m+[m
+ web/app/page.tsx                                   | 485 [32m++++++++++++++++++[m[31m---[m
+ web/app/privacy/page.tsx                           |  71 [32m+++[m
+ .../components/SecurityIntelTools.tsx              | 183 [32m++++++++[m
+ web/app/security-tools/page.tsx                    |   6 [32m+[m
+ web/app/terms/page.tsx                             |  56 [32m+++[m
+ web/public/icon-192.svg                            |   6 [32m+[m
+ web/public/icon-512.svg                            |   6 [32m+[m
+ web/public/manifest.json                           |  24 [32m+[m
+ web/public/sw.js                                   |  82 [32m++++[m
+ 22 files changed, 1574 insertions(+), 252 deletions(-)

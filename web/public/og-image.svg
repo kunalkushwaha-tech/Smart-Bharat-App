@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">Bharat App</title>
+  <desc id="desc">One Platform for Cyber Safety and Citizen Services</desc>
+  <rect width="1200" height="630" fill="#050B14"/>
+  <circle cx="1030" cy="100" r="260" fill="#0B1F3A"/>
+  <path d="M970 100l60-35 60 35v70c0 72-60 106-60 106s-60-34-60-106z" fill="#FF9933" stroke="#ECF2FA" stroke-width="8"/>
+  <path d="M1005 165l20 20 38-48" fill="none" stroke="#050B14" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="90" y="260" fill="#FF9933" font-family="Arial, sans-serif" font-size="72" font-weight="700">Bharat App</text>
+  <text x="95" y="345" fill="#ECF2FA" font-family="Arial, sans-serif" font-size="34">One Platform for Cyber Safety</text>
+  <text x="95" y="395" fill="#ECF2FA" font-family="Arial, sans-serif" font-size="34">&amp; Citizen Services</text>
+  <rect x="95" y="470" width="270" height="8" rx="4" fill="#128807"/>
+</svg>
