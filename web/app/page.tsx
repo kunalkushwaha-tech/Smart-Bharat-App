@@ -27,8 +27,18 @@ type QuizQuestion = {
   options: Array<{ text: string; correct: boolean }>;
 };
 
+const quickPrompts = [
+  "Check this URL",
+  "Is this SMS a scam?",
+  "How to secure my account?",
+  "I got a suspicious payment request",
+  "How to report cyber fraud?",
+];
+
 const emergencyContacts: EmergencyContact[] = [
   { number: "112", label: "Unified Emergency Response" },
+  { number: "108", label: "Ambulance Emergency Services" },
+  { number: "101", label: "Fire Emergency Services" },
   {
     number: "1930",
     label: "Cybercrime Financial Fraud Helpline",
@@ -660,6 +670,25 @@ Apply: ${scheme.applyUrl}`,
               <p className="mb-3 text-sm">
                 Ask in Hinglish: &quot;password safe hai?&quot;, &quot;ye link fake hai kya?&quot;
               </p>
+              <div className="mb-3 flex flex-wrap gap-2">
+                {quickPrompts.map((prompt) => (
+                  <button
+                    key={prompt}
+                    type="button"
+                    onClick={() => {
+                      setChatInput(prompt);
+                      setChatError(null);
+                    }}
+                    className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                      isDark
+                        ? "border-white/20 text-[#ECF2FA] hover:bg-[#122A4D]"
+                        : "border-[#0B1F3A]/20 text-[#0B1F3A] hover:bg-[#eef4ff]"
+                    }`}
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
               <div className="flex gap-2">
                 <input
                   value={chatInput}
@@ -687,6 +716,7 @@ Apply: ${scheme.applyUrl}`,
                   {isChatLoading ? "Sending..." : "Send"}
                 </button>
               </div>
+              <p className="mt-2 text-xs text-gray-400">⚠️ AI-generated guidance may not always be accurate.</p>
               {chatError ? <p className="mt-2 text-sm text-[#ffb0b0]">{chatError}</p> : null}
               <div
                 className={`mt-4 max-h-72 space-y-3 overflow-y-auto rounded-lg border p-3 ${
@@ -960,7 +990,7 @@ Apply: ${scheme.applyUrl}`,
       <footer className="mt-16 py-8 border-t border-gray-700 text-center text-gray-400">
   <div className="flex justify-center gap-6 mb-3">
     <a href="#" className="hover:text-white">About</a>
-    <a href="#" className="hover:text-white">Privacy Policy</a>
+    <Link href="/privacy" className="hover:text-white">Privacy Policy</Link>
     <a href="https://github.com/kunalkushwaha-tech" target="_blank" className="hover:text-white">GitHub</a>
     <a href="tel:+918126748461" className="hover:text-white">Contact</a>
   </div>
