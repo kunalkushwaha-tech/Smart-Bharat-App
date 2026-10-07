@@ -4,6 +4,9 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 import VisitorCounter from "./components/VisitorCounter";
+import PanicMode from "./components/PanicMode";
+import HeroSection from "./components/HeroSection";
+import MobileBottomNav from "./components/MobileBottomNav";
 
 
 type Theme = "light" | "dark";
@@ -42,6 +45,8 @@ const emergencyContacts: EmergencyContact[] = [
     websiteLabel: "childlineindia.org",
   },
   { number: "181", label: "Women Safety Helpline" },
+  { number: "108", label: "Ambulance" },
+  { number: "101", label: "Fire" },
   {
   number: "1915",
   label: "National Consumer Helpline",
@@ -609,6 +614,8 @@ Apply: ${scheme.applyUrl}`,
         </div>
       </nav>
 
+      <HeroSection onNavigate={scrollToSection} />
+
       <main className="mx-auto w-full max-w-6xl space-y-8 px-5 py-8 md:px-8">
         <section
           id="emergency"
@@ -617,6 +624,7 @@ Apply: ${scheme.applyUrl}`,
           }`}
         >
           <h2 className="mb-4 text-2xl font-bold">Emergency Services</h2>
+          <PanicMode />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {emergencyContacts.map((item) => (
               <div
@@ -957,15 +965,16 @@ Apply: ${scheme.applyUrl}`,
           </button>
         </section>
       </main>
-      <footer className="mt-16 py-8 border-t border-gray-700 text-center text-gray-400">
+      <footer className="mt-16 pb-24 pt-8 text-center text-gray-400 md:pb-8">
   <div className="flex justify-center gap-6 mb-3">
     <a href="#" className="hover:text-white">About</a>
-    <a href="#" className="hover:text-white">Privacy Policy</a>
+    <Link href="/privacy" className="hover:text-white">Privacy Policy</Link>
     <a href="https://github.com/kunalkushwaha-tech" target="_blank" className="hover:text-white">GitHub</a>
     <a href="tel:+918126748461" className="hover:text-white">Contact</a>
   </div>
   <p className="text-sm">© 2026 Bharat App</p>
 </footer>
+     <MobileBottomNav activeTab={activeTab} onNavigate={scrollToSection} isDark={isDark} />
     </div>
   );
 }

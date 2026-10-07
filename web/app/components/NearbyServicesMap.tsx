@@ -4,18 +4,15 @@ import { useEffect, useMemo, useState } from "react";
 import L, { type LatLngTuple } from "leaflet";
 import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
 
+import { useNearbyFinder, type NearbyPoint } from "../hooks/useNearbyFinder";
+import { useGeolocationFallback } from "../hooks/useGeolocationFallback";
+
 type NearbyServicesMapProps = {
   isDark: boolean;
 };
 
-type ServicePoint = {
-  id: string;
-  label: string;
-  type: "police" | "hospital" | "cyber";
-  position: LatLngTuple;
-};
-
 const DEFAULT_CENTER: LatLngTuple = [28.6139, 77.209];
+const OVERPASS_URL = "https://overpass-api.de/api/interpreter";
 
 function buildMarkerIcon(emoji: string, background: string) {
   return L.divIcon({
@@ -31,23 +28,18 @@ const iconByType = {
   user: buildMarkerIcon("📍", "#2563eb"),
   police: buildMarkerIcon("👮", "#dc2626"),
   hospital: buildMarkerIcon("🏥", "#16a34a"),
-  cyber: buildMarkerIcon("🛡️", "#0891b2"),
+  cybercrime: buildMarkerIcon("🛡️", "#0891b2"),
 };
 
 function MapResizeHandler({ triggerKey }: { triggerKey: string }) {
   const map = useMap();
-
   useEffect(() => {
     const invalidate = () => map.invalidateSize();
     const animationFrame = window.requestAnimationFrame(invalidate);
     const delayedInvalidate = window.setTimeout(invalidate, 200);
     window.addEventListener("resize", invalidate);
-
-    const observer = new ResizeObserver(() => {
-      invalidate();
-    });
+    const observer = new ResizeObserver(invalidate);
     observer.observe(map.getContainer());
-
     return () => {
       window.cancelAnimationFrame(animationFrame);
       window.clearTimeout(delayedInvalidate);
@@ -55,106 +47,93 @@ function MapResizeHandler({ triggerKey }: { triggerKey: string }) {
       observer.disconnect();
     };
   }, [map, triggerKey]);
-
   return null;
 }
 
+function formatDistance(distance: number): string {
+  return distance < 1000 ? `${Math.round(distance)} m` : `${(distance / 1000).toFixed(1)} km`;
+}
+
 export default function NearbyServicesMap({ isDark }: NearbyServicesMapProps) {
-  const [userLocation, setUserLocation] = useState<LatLngTuple | null>(null);
-  const [geoState, setGeoState] = useState<"idle" | "loading" | "ready" | "denied" | "error">("idle");
-  const [geoMessage, setGeoMessage] = useState<string>("");
+  const { location, isFallback } = useGeolocationFallback();
+  const [points, setPoints] = useState<NearbyPoint[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const center: LatLngTuple = location ? [location.lat, location.lng] : DEFAULT_CENTER;
 
-  const center = userLocation ?? DEFAULT_CENTER;
+  useEffect(() => {
+    if (!location) return;
+    const controller = new AbortController();
+    const query = `[out:json][timeout:15];(nwr["amenity"="police"](around:5000,${location.lat},${location.lng});nwr["amenity"="hospital"](around:5000,${location.lat},${location.lng}););out center tags;`;
+    queueMicrotask(() => {
+      setIsLoading(true);
+      setFetchError(null);
+    });
 
-  const nearbyServices = useMemo<ServicePoint[]>(() => {
-    const [baseLat, baseLng] = center;
-    return [
-      { id: "police-1", label: "Nearby Police Station", type: "police", position: [baseLat + 0.01, baseLng + 0.006] },
-      { id: "hospital-1", label: "Nearby Government Hospital", type: "hospital", position: [baseLat - 0.012, baseLng + 0.005] },
-      { id: "cyber-1", label: "Nearby Cybercrime Cell", type: "cyber", position: [baseLat + 0.007, baseLng - 0.008] },
-    ];
-  }, [center]);
+    fetch(`${OVERPASS_URL}?data=${encodeURIComponent(query)}`, { signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Overpass request failed");
+        const data: { elements?: Array<{ id: number; lat?: number; lon?: number; center?: { lat: number; lon: number }; tags?: Record<string, string> }> } = await response.json();
+        const nextPoints = (data.elements ?? []).flatMap((element) => {
+          const lat = element.lat ?? element.center?.lat;
+          const lng = element.lon ?? element.center?.lon;
+          const category = element.tags?.amenity;
+          if (lat === undefined || lng === undefined || (category !== "police" && category !== "hospital")) return [];
+          return [{ lat, lng, category, name: element.tags?.name ?? (category === "police" ? "Police station" : "Hospital") } satisfies NearbyPoint];
+        });
+        setPoints(nextPoints);
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        setFetchError("Nearby services could not be loaded. Try again later.");
+      })
+      .finally(() => setIsLoading(false));
 
-  const fetchLocation = () => {
-    if (!navigator.geolocation) {
-      setGeoState("error");
-      setGeoMessage("Geolocation is not supported in this browser.");
-      return;
-    }
+    return () => controller.abort();
+  }, [location]);
 
-    setUserLocation(null);
-    setGeoState("loading");
-    setGeoMessage("");
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setUserLocation([position.coords.latitude, position.coords.longitude]);
-        setGeoState("ready");
-      },
-      (error) => {
-        if (error.code === error.PERMISSION_DENIED) {
-          setGeoState("denied");
-          setGeoMessage("Location permission denied. Showing demo nearby services for reference.");
-          return;
-        }
-        setGeoState("error");
-        setGeoMessage("Unable to fetch your location right now. Showing demo nearby services.");
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
-    );
-  };
+  const police = useNearbyFinder(location, "police", points);
+  const hospitals = useNearbyFinder(location, "hospital", points);
+  const nearbyServices = useMemo(() => [...police, ...hospitals].sort((a, b) => a.distance - b.distance), [hospitals, police]);
 
   return (
-    <div
-      className={`mt-5 rounded-xl border p-4 ${
-        isDark ? "border-white/10 bg-[#0A1424]" : "border-[#0B1F3A]/10 bg-[#F9FBFF]"
-      }`}
-    >
+    <div className={`mt-5 rounded-xl border p-4 ${isDark ? "border-white/10 bg-[#0A1424]" : "border-[#0B1F3A]/10 bg-[#F9FBFF]"}`}>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <h3 className="text-lg font-bold">Nearby Emergency Services</h3>
-        <button
-          type="button"
-          onClick={fetchLocation}
-          className="rounded-full bg-[#0B1F3A] px-4 py-2 text-xs font-semibold text-white"
-          disabled={geoState === "loading"}
-        >
-          {geoState === "loading" ? "Locating..." : "Use My Location"}
-        </button>
+        <div>
+          <h3 className="text-lg font-bold">Nearby Emergency Services</h3>
+          <p className="text-xs opacity-75">Live OpenStreetMap data within 5 km</p>
+        </div>
+        {isFallback ? <span className="rounded-full bg-amber-500/15 px-2 py-1 text-xs font-semibold text-amber-700">Using last known location</span> : null}
       </div>
+      {isLoading ? <p className="mb-3 text-sm opacity-80">Loading nearby police stations and hospitals...</p> : null}
+      {fetchError ? <p className="mb-3 text-sm text-[#b42318]">{fetchError}</p> : null}
+      {!isLoading && !fetchError && location && nearbyServices.length === 0 ? <p className="mb-3 text-sm opacity-80">No police stations or hospitals found within 5 km.</p> : null}
+      {!location ? <p className="mb-3 text-sm opacity-80">Allow location access to find nearby services.</p> : null}
 
-      {geoState === "denied" || geoState === "error" ? (
-        <p className="mb-3 text-sm text-[#ffb0b0]">{geoMessage}</p>
-      ) : null}
-
-      {geoState === "idle" ? (
-        <p className="mb-3 text-sm opacity-80">
-          Tap &quot;Use My Location&quot; to show your current position and nearby services.
-        </p>
-      ) : null}
-
-      <div className="w-full h-[320px] overflow-hidden rounded-lg border border-white/15">
-        <MapContainer
-          key={`${center[0]}-${center[1]}`}
-          center={center}
-          zoom={13}
-          scrollWheelZoom
-          className="w-full h-full"
-          style={{ height: "100%", width: "100%" }}
-        >
-          <MapResizeHandler triggerKey={`${center[0]}-${center[1]}-${geoState}`} />
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-
-          {userLocation ? (
-            <Marker position={userLocation} icon={iconByType.user}>
-              <Popup>Your current location</Popup>
-            </Marker>
-          ) : null}
-
+      {nearbyServices.length > 0 ? (
+        <div className="mb-3 grid gap-2 sm:grid-cols-2">
           {nearbyServices.map((service) => (
-            <Marker key={service.id} position={service.position} icon={iconByType[service.type]}>
-              <Popup>{service.label}</Popup>
+            <div key={`${service.category}-${service.lat}-${service.lng}`} className="rounded-lg border border-black/10 p-2 text-sm">
+              <p className="font-semibold">{service.name}</p>
+              <p className="text-xs opacity-75">{service.category} · {formatDistance(service.distance)}</p>
+              <a className="text-xs font-semibold text-[#2563eb] underline" target="_blank" rel="noopener noreferrer" href={`https://www.google.com/maps/dir/?api=1&destination=${service.lat},${service.lng}`}>Get Directions</a>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      <div className="h-[320px] w-full overflow-hidden rounded-lg border border-white/15">
+        <MapContainer key={`${center[0]}-${center[1]}`} center={center} zoom={13} scrollWheelZoom className="h-full w-full" style={{ height: "100%", width: "100%" }}>
+          <MapResizeHandler triggerKey={`${center[0]}-${center[1]}`} />
+          <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          {location ? <Marker position={[location.lat, location.lng]} icon={iconByType.user}><Popup>Your current location</Popup></Marker> : null}
+          {nearbyServices.map((service) => (
+            <Marker key={`${service.category}-${service.lat}-${service.lng}`} position={[service.lat, service.lng]} icon={iconByType[service.category]}>
+              <Popup>
+                <strong>{service.name}</strong><br />
+                {formatDistance(service.distance)} away<br />
+                <a href={`https://www.google.com/maps/dir/?api=1&destination=${service.lat},${service.lng}`} target="_blank" rel="noopener noreferrer">Get Directions</a>
+              </Popup>
             </Marker>
           ))}
         </MapContainer>
