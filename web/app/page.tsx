@@ -180,6 +180,11 @@ const scamWarnings = [
   "⚠️ Fake Loan App Harassment",
   "⚠️ UPI Refund Request Fraud",
 ];
+const translatedScamWarnings: Record<Language, string[]> = {
+  en: scamWarnings,
+  hi: ["⚠️ FedEx पार्सल घोटाला अलर्ट", "⚠️ नकली बिजली बिल SMS धोखाधड़ी", "⚠️ WhatsApp पर पार्ट-टाइम नौकरी घोटाला", "⚠️ KYC अपडेट फिशिंग कॉल", "⚠️ नकली लोन ऐप उत्पीड़न", "⚠️ UPI रिफंड अनुरोध धोखाधड़ी"],
+  mr: ["⚠️ FedEx पार्सल घोटाळा सूचना", "⚠️ बनावट वीज बिल SMS फसवणूक", "⚠️ WhatsApp वरील अर्धवेळ नोकरी घोटाळा", "⚠️ KYC अपडेट फिशिंग कॉल", "⚠️ बनावट कर्ज अॅपचा त्रास", "⚠️ UPI परतावा विनंती फसवणूक"],
+};
 
 const translations = {
   en: {
@@ -335,6 +340,7 @@ export default function Home() {
   const isDark = theme === "dark";
   const [language, setLanguage] = useState<Language>("en");
   const text = translations[language];
+  const [highContrast, setHighContrast] = useState(false);
 
   const [activeTab, setActiveTab] = useState<TabId>("emergency");
   const [panicShortcut, setPanicShortcut] = useState(false);
@@ -382,6 +388,14 @@ export default function Home() {
       localStorage.setItem("theme", theme);
     }
   }, [theme, themeInitialized]);
+
+  useEffect(() => {
+    setHighContrast(localStorage.getItem("high-contrast") === "true");
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("high-contrast", String(highContrast));
+  }, [highContrast]);
 
   useEffect(() => {
     const savedHistory = localStorage.getItem(COMPLAINT_HISTORY_KEY);
@@ -660,6 +674,24 @@ Computed Severity Score: ${score}/100`,
     setComplaintError(null);
   };
 
+  const exportComplaintHistory = () => {
+    if (complaintHistory.length === 0) {
+      setComplaintError("No complaint history is available to export.");
+      return;
+    }
+    const fileUrl = URL.createObjectURL(
+      new Blob([JSON.stringify(complaintHistory, null, 2)], { type: "application/json" }),
+    );
+    const link = document.createElement("a");
+    link.href = fileUrl;
+    link.download = `bharat-app-complaints-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(fileUrl);
+    setComplaintError(null);
+  };
+
   const evaluateSchemeFor = (scheme: Scheme) => {
     const age = Number.parseInt(schemeAge, 10);
     const income = Number.parseInt(schemeIncome, 10);
@@ -754,9 +786,20 @@ Apply: ${scheme.applyUrl}`,
     setQuizAnswered(null);
   };
 
+  const speakScamWarnings = () => {
+    if (!("speechSynthesis" in window)) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(translatedScamWarnings[language].join(". "));
+    const languageCode = language === "hi" ? "hi-IN" : language === "mr" ? "mr-IN" : "en-IN";
+    utterance.lang = languageCode;
+    const voice = window.speechSynthesis.getVoices().find((candidate) => candidate.lang.toLowerCase().startsWith(languageCode.slice(0, 2)));
+    if (voice) utterance.voice = voice;
+    window.speechSynthesis.speak(utterance);
+  };
+
   return (
     <div
-      className={`min-h-screen transition-colors ${
+      className={`${highContrast ? "high-contrast " : ""}min-h-screen transition-colors ${
         isDark ? "bg-[#050B14] text-[#ECF2FA]" : "bg-[#F4F7FC] text-[#111E30]"
       }`}
     >
@@ -794,6 +837,18 @@ Apply: ${scheme.applyUrl}`,
             aria-label="Toggle dark mode"
           >
             {isDark ? "☀ Light" : "🌙 Dark"}
+          </button>
+          <button
+            type="button"
+            onClick={() => setHighContrast((current) => !current)}
+            className={`rounded-full px-3 py-2 text-sm font-bold ${
+              isDark ? "bg-[#122A4D] text-[#ECF2FA]" : "bg-[#0B1F3A] text-white"
+            }`}
+            aria-label="Toggle high contrast and large text mode"
+            aria-pressed={highContrast}
+            title="High contrast and large text"
+          >
+            Aa
           </button>
         </div>
       </header>
@@ -865,15 +920,24 @@ Apply: ${scheme.applyUrl}`,
       <main id="main-content" tabIndex={-1} className="mx-auto w-full max-w-6xl space-y-8 px-5 py-8 md:px-8">
         <section
           aria-label={text.tickerLabel}
-          className={`scam-ticker overflow-hidden rounded-xl border ${
+          className={`scam-ticker relative flex items-center overflow-hidden rounded-xl border ${
             isDark ? "border-[#d93838]/50 bg-[#2a1118]" : "border-[#d93838]/30 bg-[#fff2f2]"
           }`}
         >
-          <div className="scam-ticker-track flex w-max gap-10 whitespace-nowrap px-5 py-3 text-sm font-bold text-[#ff8b8b]">
+          <div className="scam-ticker-track flex min-w-0 w-max flex-1 gap-10 whitespace-nowrap px-5 py-3 text-sm font-bold text-[#ff8b8b]">
             {[...scamWarnings, ...scamWarnings].map((warning, index) => (
               <span key={`${warning}-${index}`}>{warning}</span>
             ))}
           </div>
+          <button
+            type="button"
+            onClick={speakScamWarnings}
+            className="z-10 mr-2 shrink-0 rounded-full bg-[#d93838] px-3 py-2 text-white shadow"
+            aria-label="Read scam alerts aloud"
+            title="Read scam alerts aloud"
+          >
+            <span aria-hidden="true">🔊</span>
+          </button>
         </section>
         <EmergencyErrorBoundary>
           <section
@@ -962,6 +1026,9 @@ Apply: ${scheme.applyUrl}`,
                   {isChatLoading ? "Sending..." : "Send"}
                 </button>
               </div>
+              <p className={`mt-2 text-xs ${isDark ? "text-[#ffd166]" : "text-[#9a6700]"}`}>
+                ⚠️ Please do not share your OTP, CVV, PIN, or bank account details here.
+              </p>
               {chatError ? <p className="mt-2 text-sm text-[#ffb0b0]">{chatError}</p> : null}
               <div
                 className={`mt-4 max-h-72 space-y-3 overflow-y-auto rounded-lg border p-3 ${
@@ -1196,13 +1263,22 @@ Apply: ${scheme.applyUrl}`,
                 <p className="text-xs opacity-75">Local-only history. These formatted complaints are stored in this browser and are not synced to any server.</p>
               </div>
               {complaintHistory.length > 0 ? (
-                <button
-                  type="button"
-                  onClick={clearComplaintHistory}
-                  className="rounded-full border border-[#d93838] px-3 py-1 text-xs font-semibold text-[#ffb0b0]"
-                >
-                  Clear History
-                </button>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={exportComplaintHistory}
+                    className="rounded-full border border-[#128807] px-3 py-1 text-xs font-semibold text-[#8ee28a]"
+                  >
+                    Export All as JSON
+                  </button>
+                  <button
+                    type="button"
+                    onClick={clearComplaintHistory}
+                    className="rounded-full border border-[#d93838] px-3 py-1 text-xs font-semibold text-[#ffb0b0]"
+                  >
+                    Clear History
+                  </button>
+                </div>
               ) : null}
             </div>
             {complaintHistory.length > 0 ? (
@@ -1324,7 +1400,7 @@ Apply: ${scheme.applyUrl}`,
           )}
         </section>
       </main>
-      <footer className="mt-16 py-8 border-t border-gray-700 text-center text-gray-400">
+      <footer className="mt-16 py-8 pb-24 text-center text-gray-400 md:pb-8 border-t border-gray-700">
   <div className="flex justify-center gap-6 mb-3">
     <a href="/about" className="hover:text-white">About</a>
     <a href="/privacy" className="hover:text-white">Privacy Policy</a>
@@ -1332,8 +1408,23 @@ Apply: ${scheme.applyUrl}`,
     <a href="https://github.com/kunalkushwaha-tech" target="_blank" className="hover:text-white">GitHub</a>
     <a href="tel:+918126748461" className="hover:text-white">Contact</a>
   </div>
+  <p className="mx-auto max-w-3xl text-xs leading-relaxed text-[#cbd5e1]">
+    Bharat App is an independent, open-access awareness platform and is not officially affiliated with any government agency.
+    Helpline numbers and scheme links point to official government sources.
+  </p>
   <p className="text-sm">© 2026 Bharat App</p>
 </footer>
+      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-red-400/40 bg-[#210b10]/95 p-2 shadow-[0_-4px_16px_rgba(0,0,0,0.25)] backdrop-blur md:hidden">
+        <div className="mx-auto flex max-w-md items-center justify-center gap-2">
+          <span className="mr-1 text-xs font-bold text-white">Emergency</span>
+          <a href="tel:112" className="flex-1 rounded-full bg-red-600 px-3 py-2 text-center text-sm font-bold text-white" aria-label="Call emergency number 112">
+            112 <span className="hidden min-[360px]:inline">Call</span>
+          </a>
+          <a href="tel:1930" className="flex-1 rounded-full bg-[#FF9933] px-3 py-2 text-center text-sm font-bold text-black" aria-label="Call cybercrime helpline 1930">
+            1930 <span className="hidden min-[360px]:inline">Cybercrime</span>
+          </a>
+        </div>
+      </div>
     </div>
   );
 }
