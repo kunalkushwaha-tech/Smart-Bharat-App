@@ -34,4 +34,3 @@
     "typescript": "^5"
   }
 }
-'@ | Set-Content -Path "package.json" -Encoding UTF8
