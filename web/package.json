@@ -1,3 +1,4 @@
+
 {
   "name": "web",
   "version": "0.1.0",
@@ -32,3 +33,4 @@
     "typescript": "^5"
   }
 }
+'@ | Set-Content -Path "package.json" -Encoding UTF8
