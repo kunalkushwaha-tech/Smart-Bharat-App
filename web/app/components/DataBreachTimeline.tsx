@@ -5,10 +5,11 @@ import { updateCyberHygieneResults } from '../security-tools/components/cyberHyg
 import ToolFeedback from '../security-tools/components/ToolFeedback';
 import RecentChecks from '../security-tools/components/RecentChecks';
 import { addToolHistory } from '../security-tools/components/toolActivity';
+import PrivacyTrustBadge from './PrivacyTrustBadge';
 
 const DataBreachTimeline = () => {
   const [email, setEmail] = useState('');
-  const [breaches, setBreaches] = useState<string[]>([]);
+  const [breaches, setBreaches] = useState<Array<{ name: string; date?: string }>>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [checked, setChecked] = useState(false);
@@ -32,7 +33,7 @@ const DataBreachTimeline = () => {
       if (!res.ok) {
         setMessage(data.error || 'Kuch galat ho gaya.');
       } else if (data.breaches.length === 0) {
-        setMessage('Achi khabar! Koi breach nahi mila.');
+        setMessage('No breaches found for this email.');
         updateCyberHygieneResults({ breach: { found: false, checked: true } });
         addToolHistory('breach', { summary: 'No breaches found', detail: email });
       } else {
@@ -73,12 +74,13 @@ const DataBreachTimeline = () => {
             {breaches.length} breach(es) me mila:
           </p>
           <ul className="grid grid-cols-2 gap-2">
-            {breaches.map((name) => (
+            {breaches.map((breach) => (
               <li
-                key={name}
+                key={breach.name}
                 className="p-2 bg-gray-800 rounded text-sm text-gray-300"
               >
-                {name}
+                <span className="font-medium">{breach.name}</span>
+                {breach.date && <span className="ml-2 text-gray-400">({breach.date})</span>}
               </li>
             ))}
           </ul>
@@ -86,6 +88,9 @@ const DataBreachTimeline = () => {
       )}
       <ToolFeedback toolId="breach" />
       <RecentChecks toolId="breach" />
+      <div className="mt-4">
+        <PrivacyTrustBadge />
+      </div>
     </div>
   );
 };

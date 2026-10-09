@@ -10,6 +10,7 @@ import CommunityScamAlerts from "./components/CommunityScamAlerts";
 import EmergencyErrorBoundary from "./components/EmergencyErrorBoundary";
 import SpeechInput from "./components/SpeechInput";
 import CyberAwarenessCertificate from "./components/CyberAwarenessCertificate";
+import PrivacyTrustBadge from "./components/PrivacyTrustBadge";
 
 
 type Theme = "light" | "dark";
@@ -532,6 +533,7 @@ export default function Home() {
 
   const [activeTab, setActiveTab] = useState<TabId>("emergency");
   const [panicShortcut, setPanicShortcut] = useState(false);
+  const [panicModeVisible, setPanicModeVisible] = useState(true);
 
   const [chatInput, setChatInput] = useState("");
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
@@ -548,9 +550,7 @@ export default function Home() {
   const [complaintAnalysis, setComplaintAnalysis] = useState("");
   const [complaintHistory, setComplaintHistory] = useState<ComplaintHistoryItem[]>([]);
   const [complaintError, setComplaintError] = useState<string | null>(null);
-  const [selectedComplaintCategory, setSelectedComplaintCategory] = useState(complaintCategories[0].title);
-  const [complaintReference, setComplaintReference] = useState("");
-  const [trackingGuidance, setTrackingGuidance] = useState("");
+  const [complaintDownloaded, setComplaintDownloaded] = useState(false);
 
   const [schemeAge, setSchemeAge] = useState("");
   const [schemeState, setSchemeState] = useState("");
@@ -619,15 +619,15 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    const savedLanguage = localStorage.getItem("language");
-    if (savedLanguage === "en" || savedLanguage === "hi") {
-      setLanguage(savedLanguage);
-    }
+    const panicMode = document.getElementById("panic-mode");
+    if (!panicMode) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setPanicModeVisible(Boolean(entry?.isIntersecting)),
+      { threshold: 0.1 },
+    );
+    observer.observe(panicMode);
+    return () => observer.disconnect();
   }, []);
-
-  useEffect(() => {
-    localStorage.setItem("language", language);
-  }, [language]);
 
   useEffect(() => {
     const tabs: TabId[] = ["emergency", "ai", "complaints", "security", "academy"];
@@ -768,7 +768,7 @@ export default function Home() {
 
   const runAIComplaintWriter = () => {
     const text = complaintInput.trim();
-    if (!text) {
+    if (!text || text.length > 5000) {
       setComplaintError("Please enter complaint details.");
       return;
     }
@@ -790,7 +790,7 @@ export default function Home() {
 
   const runAIComplaintAnalyzer = () => {
     const text = complaintInput.trim();
-    if (!text) {
+    if (!text || text.length > 5000) {
       setComplaintError("Please enter complaint details.");
       return;
     }
@@ -856,6 +856,7 @@ Computed Severity Score: ${score}/100`,
     link.click();
     link.remove();
     URL.revokeObjectURL(fileUrl);
+    setComplaintDownloaded(true);
     setComplaintError(null);
   };
 
@@ -880,7 +881,12 @@ Computed Severity Score: ${score}/100`,
     popup.document.close();
     popup.focus();
     popup.print();
+    setComplaintDownloaded(true);
     setComplaintError(null);
+  };
+
+  const openCybercrimePortal = () => {
+    window.open("https://cybercrime.gov.in", "_blank", "noopener,noreferrer");
   };
 
   const viewComplaintHistoryItem = (item: ComplaintHistoryItem) => {
@@ -1459,6 +1465,15 @@ Apply: ${scheme.applyUrl}`,
               Download PDF
             </button>
           </div>
+          {complaintDownloaded ? (
+            <button
+              type="button"
+              onClick={openCybercrimePortal}
+              className="mt-3 inline-flex w-full items-center justify-center rounded-full bg-[#128807] px-5 py-3 text-center font-bold text-white shadow-lg hover:bg-[#0d6b05] sm:w-auto"
+            >
+              Go to Official Govt Cybercrime Portal (cybercrime.gov.in)
+            </button>
+          ) : null}
           {complaintError ? <p className="mt-2 text-sm text-[#ffb0b0]">{complaintError}</p> : null}
 
           {complaintOutput ? (
@@ -1640,7 +1655,10 @@ Apply: ${scheme.applyUrl}`,
           </a>
         </section>
       </main>
-      <footer className="mt-16 py-8 pb-24 text-center text-gray-400 md:pb-8 border-t border-gray-700">
+      <footer className="mt-16 py-8 border-t border-gray-700 text-center text-gray-400">
+  <div className="mb-5 flex justify-center">
+    <PrivacyTrustBadge />
+  </div>
   <div className="flex justify-center gap-6 mb-3">
     <a href="/about" className="hover:text-white">About</a>
     <a href="/privacy" className="hover:text-white">Privacy Policy</a>
@@ -1654,17 +1672,16 @@ Apply: ${scheme.applyUrl}`,
   </p>
   <p className="text-sm">© 2026 Bharat App</p>
 </footer>
-      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-red-400/40 bg-[#210b10]/95 p-2 shadow-[0_-4px_16px_rgba(0,0,0,0.25)] backdrop-blur md:hidden">
-        <div className="mx-auto flex max-w-md items-center justify-center gap-2">
-          <span className="mr-1 text-xs font-bold text-white">Emergency</span>
-          <a href="tel:112" className="flex-1 rounded-full bg-red-600 px-3 py-2 text-center text-sm font-bold text-white" aria-label="Call emergency number 112">
-            112 <span className="hidden min-[360px]:inline">Call</span>
-          </a>
-          <a href="tel:1930" className="flex-1 rounded-full bg-[#FF9933] px-3 py-2 text-center text-sm font-bold text-black" aria-label="Call cybercrime helpline 1930">
-            1930 <span className="hidden min-[360px]:inline">Cybercrime</span>
-          </a>
-        </div>
-      </div>
+      {!panicModeVisible ? (
+        <button
+          type="button"
+          onClick={() => document.getElementById("panic-mode")?.scrollIntoView({ behavior: "smooth", block: "center" })}
+          className="fixed bottom-5 right-5 z-40 rounded-full border border-red-300/50 bg-red-700 px-4 py-3 text-sm font-bold text-white shadow-lg transition hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-300"
+          aria-label="Scroll to Panic Mode"
+        >
+          🛡️ Panic Mode
+        </button>
+      ) : null}
     </div>
   );
 }

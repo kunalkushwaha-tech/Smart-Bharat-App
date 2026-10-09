@@ -44,6 +44,12 @@ function relativeTime(value: string) {
   return `${days} day${days === 1 ? "" : "s"} ago`;
 }
 
+function shareReportOnWhatsApp(report: ScamReport) {
+  const details = report.description ? ` Details: ${report.description}` : "";
+  const message = `⚠️ Alert: Watch out for ${report.scam_type} scams.${details} Stay informed at smartbharat.me`;
+  window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
+}
+
 export default function CommunityScamAlerts() {
   const configured = useMemo(isConfigured, []);
   const [reports, setReports] = useState<ScamReport[]>([]);
@@ -139,6 +145,13 @@ export default function CommunityScamAlerts() {
                   <time className="text-xs opacity-60" dateTime={report.created_at}>{relativeTime(report.created_at)}</time>
                 </div>
                 {report.description && <p className="mt-2 text-xs opacity-80">{report.description}</p>}
+                <button
+                  type="button"
+                  onClick={() => shareReportOnWhatsApp(report)}
+                  className="mt-3 rounded-full bg-[#25D366] px-3 py-1.5 text-xs font-semibold text-[#062b14] hover:bg-[#1ebe5d]"
+                >
+                  Share on WhatsApp
+                </button>
               </li>
             ))}
           </ul>
