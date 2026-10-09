@@ -2,11 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const email = typeof body.email === "string" ? body.email.trim() : "";
+    const { email } = await req.json();
 
-    if (!email || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return NextResponse.json({ error: 'Invalid email address' }, { status: 400 });
+    if (!email) {
+      return NextResponse.json({ error: 'Email is required' }, { status: 400 });
     }
 
     const response = await fetch(
@@ -24,7 +23,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ breaches: breachNames });
   } catch (error) {
-    console.error("Breach check failed", error);
-    return NextResponse.json({ error: 'Something went wrong, please try again' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Server error while checking breaches' },
+      { status: 500 }
+    );
   }
 }

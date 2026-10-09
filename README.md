@@ -15,8 +15,7 @@ From checking suspicious URLs and passwords to finding emergency services and un
 - Password Auditor — Checks password strength using entropy calculation and generates SHA-256/SHA-1 fingerprints. It also supports real HIBP k-Anonymity breach checking.
 - Password Generator — Creates strong, customizable passwords.
 - Data Breach Timeline — Checks an email address for known breach history using the XposedOrNot API.
-- URL / Malicious Link Scanner — Performs heuristic checks and uses Google Safe Browsing plus optional VirusTotal verification to identify potentially unsafe URLs.
-- Fake SMS Sender ID / Header Checker — Validates the basic DLT sender-header format and explains common SMS scam red flags.
+- URL / Malicious Link Scanner — Performs heuristic checks and uses Google Safe Browsing to identify potentially unsafe URLs.
 - Fake Job & Loan Scam Checker — Identifies common red flags associated with fraudulent job and loan offers.
 - QR Code Scanner — Scans QR codes using the device camera and checks detected URLs for potential safety issues.
 - File Hash Checker — Generates SHA-256 hashes to help verify file integrity.
@@ -53,7 +52,6 @@ Leaflet + OpenStreetMap| Maps and location-based services
 Have I Been Pwned| Password breach checking
 XposedOrNot API| Email breach history
 Google Safe Browsing| URL safety verification
-VirusTotal| Optional second URL safety verification layer
 Browser Geolocation API| Location-based services
 Web Crypto API| Hash generation and cryptographic operations
 
@@ -100,8 +98,6 @@ Environment Variables
 If a feature requires an external API key, create a ".env.local" file and add the required credentials according to the project's configuration.
 
 Never commit API keys or other secrets to GitHub.
-
-The optional VirusTotal integration uses `VIRUSTOTAL_API_KEY`. If it is not configured, URL scans continue using Google Safe Browsing without the VirusTotal layer.
 
 ---
 

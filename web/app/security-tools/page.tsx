@@ -12,8 +12,7 @@ import DigitalFootprintChecker from '../components/DigitalFootprintChecker';
 import RansomwareGuide from '../components/RansomwareGuide';
 import SafeShoppingChecklist from '../components/SafeShoppingChecklist';
 import SocialMediaPrivacyGuide from '../components/SocialMediaPrivacyGuide';
-import CyberHygieneScore from './components/CyberHygieneScore';
-import FakeSmsHeaderChecker from './components/FakeSmsHeaderChecker';
+import SecurityIntelTools from './components/SecurityIntelTools';
 export const metadata = {
   title: 'Security Tools & Audit - Smart Bharat',
 };
@@ -24,7 +23,8 @@ export default function SecurityToolsPage() {
       <h1 className="text-3xl font-bold mb-4">Security Tools & Audit</h1>
 
       <section className="mb-8">
-        <CyberHygieneScore />
+        <p className="mb-4 text-gray-600">Check suspicious messages, phone numbers, IPs/domains, and domain registration details.</p>
+        <SecurityIntelTools />
       </section>
 
       <section className="mb-8">
@@ -39,13 +39,8 @@ export default function SecurityToolsPage() {
 </section>
       <section className="mb-8">
         <h2 className="text-2xl font-semibold mb-2">URL / Malicious Scanner</h2>
-        <p className="mb-4 text-gray-600">Scan a URL with heuristic checks, Google Safe Browsing, and optional VirusTotal verification.</p>
+        <p className="mb-4 text-gray-600">Scan a URL with heuristic checks and Google Safe Browsing (server-side key required).</p>
         <URLScanner />
-      </section>
-      <section className="mb-8">
-        <h2 className="text-2xl font-semibold mb-2">Fake SMS Sender ID / Header Checker</h2>
-        <p className="mb-4 text-gray-600">Check the basic format of an SMS sender header and learn common SMS scam warning signs.</p>
-        <FakeSmsHeaderChecker />
       </section>
       <section className="mb-8">
   <h2 className="text-2xl font-semibold mb-2">2FA Setup Guide</h2>

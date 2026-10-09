@@ -1,11 +1,6 @@
 "use client";
 
 import React, { useState } from 'react';
-import { useEffect } from 'react';
-import { updateCyberHygieneResults } from './cyberHygieneStorage';
-import ToolFeedback from './ToolFeedback';
-import RecentChecks from './RecentChecks';
-import { addToolHistory } from './toolActivity';
 
 const FileHashChecker = () => {
   const [fileName, setFileName] = useState('');
@@ -27,7 +22,6 @@ const FileHashChecker = () => {
       const hashArray = Array.from(new Uint8Array(hashBuffer));
       const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
       setHash(hashHex);
-      addToolHistory('hash', { summary: file.name, detail: `${hashHex.slice(0, 16)}...` });
     } catch (err) {
       setHash('Error calculating hash');
     } finally {
@@ -41,18 +35,6 @@ const FileHashChecker = () => {
 
   const isMatch = expectedHash.trim().toLowerCase() === hash.toLowerCase();
   const showMatchResult = expectedHash.trim().length > 0 && hash.length > 0;
-
-  useEffect(() => {
-    if (hash && !hash.startsWith('Error')) {
-      updateCyberHygieneResults({
-        file: {
-          checked: true,
-          verified: expectedHash.trim().length > 0,
-          match: showMatchResult && isMatch,
-        },
-      });
-    }
-  }, [expectedHash, hash, isMatch, showMatchResult]);
 
   return (
     <div className="p-4 bg-gray-900 rounded-lg text-white">
@@ -96,8 +78,6 @@ const FileHashChecker = () => {
           {isMatch ? 'Verified — hashes match' : 'Mismatch — hashes do not match'}
         </p>
       )}
-      <ToolFeedback toolId="hash" />
-      <RecentChecks toolId="hash" />
     </div>
   );
 };

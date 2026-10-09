@@ -1,10 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { updateCyberHygieneResults } from './cyberHygieneStorage';
-import ToolFeedback from './ToolFeedback';
-import RecentChecks from './RecentChecks';
-import { addToolHistory } from './toolActivity';
+import { useState } from 'react';
 
 function bufToHex(buffer: ArrayBuffer) {
   return Array.from(new Uint8Array(buffer))
@@ -54,15 +50,6 @@ export default function PasswordAudit() {
   const [includeNumbers, setIncludeNumbers] = useState(true);
   const [includeSymbols, setIncludeSymbols] = useState(true);
 
-  useEffect(() => {
-    if (sha1 && pwnedCount !== null) {
-      updateCyberHygieneResults({
-        password: { entropy, checked: true },
-        breach: { found: pwnedCount > 0, checked: true },
-      });
-    }
-  }, [entropy, pwnedCount, sha1]);
-
   async function analyze(pw: string) {
     setError(null);
     setSha256(null);
@@ -92,12 +79,9 @@ export default function PasswordAudit() {
         const found = lines.find((l) => l.split(':')[0].trim() === suffix);
         if (found) {
           const cnt = parseInt(found.split(':')[1].trim(), 10);
-          const breachCount = isNaN(cnt) ? 0 : cnt;
-          setPwnedCount(breachCount);
-          addToolHistory('password', { summary: `${estimateEntropyBits(pw)} bits entropy`, detail: `${breachCount} known breaches` });
+          setPwnedCount(isNaN(cnt) ? 0 : cnt);
         } else {
           setPwnedCount(0);
-          addToolHistory('password', { summary: `${estimateEntropyBits(pw)} bits entropy`, detail: 'No known breaches' });
         }
       }
     } catch (err: unknown) {
@@ -268,8 +252,6 @@ export default function PasswordAudit() {
         <div className="mt-3 text-sm text-[#C8D5EA]">
           Guidance: Aim for 60+ bits for strong passwords. Use a unique passphrase or a password manager. Even strong passwords should be checked against breach databases.
         </div>
-        <ToolFeedback toolId="password" />
-        <RecentChecks toolId="password" />
       </div>
     </div>
   );

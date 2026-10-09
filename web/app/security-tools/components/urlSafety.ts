@@ -2,16 +2,6 @@ export type UrlScanSummary = {
   parsedUrl: string;
   heuristics: string[];
   safeBrowsing: unknown;
-  virusTotal: VirusTotalResult;
-};
-
-export type VirusTotalResult = {
-  available: boolean;
-  detectionRatio?: {
-    detected: number;
-    total: number;
-  };
-  message?: string;
 };
 
 function isIp(host: string) {
@@ -56,18 +46,11 @@ export async function runUrlSafetyScan(rawInput: string): Promise<UrlScanSummary
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ url: parsed.href }),
   });
-  const responseBody = (await response.json()) as {
-    virusTotal?: VirusTotalResult;
-    [key: string]: unknown;
-  };
+  const safeBrowsing = (await response.json()) as unknown;
 
   return {
     parsedUrl: parsed.href,
     heuristics,
-    safeBrowsing: responseBody,
-    virusTotal: responseBody.virusTotal ?? {
-      available: false,
-      message: 'VirusTotal check is unavailable.',
-    },
+    safeBrowsing,
   };
 }
