@@ -4,13 +4,9 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 import VisitorCounter from "./components/VisitorCounter";
-import IceCard from "./components/IceCard";
 import PanicMode from "./components/PanicMode";
-import CommunityScamAlerts from "./components/CommunityScamAlerts";
-import EmergencyErrorBoundary from "./components/EmergencyErrorBoundary";
-import SpeechInput from "./components/SpeechInput";
-import CyberAwarenessCertificate from "./components/CyberAwarenessCertificate";
-import PrivacyTrustBadge from "./components/PrivacyTrustBadge";
+import HeroSection from "./components/HeroSection";
+import MobileBottomNav from "./components/MobileBottomNav";
 
 
 type Theme = "light" | "dark";
@@ -155,7 +151,9 @@ const emergencyContacts: EmergencyContact[] = [
     websiteUrl: "https://www.childlineindia.org",
     websiteLabel: "childlineindia.org",
   },
-  { number: "181", label: "Women Safety Helpline", icon: "👩" },
+  { number: "181", label: "Women Safety Helpline" },
+  { number: "108", label: "Ambulance" },
+  { number: "101", label: "Fire" },
   {
   number: "1915",
   label: "National Consumer Helpline",
@@ -1153,16 +1151,39 @@ Apply: ${scheme.applyUrl}`,
         </div>
       </nav>
 
-      <main id="main-content" tabIndex={-1} className="mx-auto w-full max-w-6xl space-y-8 px-5 py-8 md:px-8">
+      <HeroSection onNavigate={scrollToSection} />
+
+      <main className="mx-auto w-full max-w-6xl space-y-8 px-5 py-8 md:px-8">
         <section
           aria-label={text.tickerLabel}
           className={`scam-ticker relative flex items-center overflow-hidden rounded-xl border ${
             isDark ? "border-[#d93838]/50 bg-[#2a1118]" : "border-[#d93838]/30 bg-[#fff2f2]"
           }`}
         >
-          <div className="scam-ticker-track flex min-w-0 w-max flex-1 gap-10 whitespace-nowrap px-5 py-3 text-sm font-bold text-[#ff8b8b]">
-            {[...scamWarnings, ...scamWarnings].map((warning, index) => (
-              <span key={`${warning}-${index}`}>{warning}</span>
+          <h2 className="mb-4 text-2xl font-bold">Emergency Services</h2>
+          <PanicMode />
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {emergencyContacts.map((item) => (
+              <div
+                key={item.number}
+                className={`hover-lift rounded-xl border p-4 ${
+                  isDark ? "border-white/10 bg-[#122A4D]" : "border-[#0B1F3A]/10 bg-[#F9FBFF]"
+                }`}
+              >
+                <p className="text-3xl font-extrabold text-[#FF9933]">{item.number}</p>
+                <p className="mt-1 text-sm">{item.label}</p>
+                <a href={`tel:${item.number}`} className="mt-3 inline-block bg-red-600 text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-red-700">Call Now</a>
+                {item.websiteUrl ? (
+                  <a
+                    href={item.websiteUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-2 inline-flex text-xs font-semibold text-[#FF9933] underline"
+                  >
+                    Official: {item.websiteLabel}
+                  </a>
+                ) : null}
+              </div>
             ))}
           </div>
           <button
@@ -1680,7 +1701,7 @@ Apply: ${scheme.applyUrl}`,
           </a>
         </section>
       </main>
-      <footer className="mt-16 py-8 border-t border-gray-700 text-center text-gray-400">
+      <footer className="mt-16 pb-24 pt-8 text-center text-gray-400 md:pb-8">
   <div className="flex justify-center gap-6 mb-3">
     <a href="#" className="hover:text-white">About</a>
     <Link href="/privacy" className="hover:text-white">Privacy Policy</Link>
@@ -1700,16 +1721,7 @@ Apply: ${scheme.applyUrl}`,
   </p>
   <p className="text-sm">© 2026 Bharat App</p>
 </footer>
-      {!panicModeVisible ? (
-        <button
-          type="button"
-          onClick={() => document.getElementById("panic-mode")?.scrollIntoView({ behavior: "smooth", block: "center" })}
-          className="fixed bottom-5 right-5 z-40 rounded-full border border-red-300/50 bg-red-700 px-4 py-3 text-sm font-bold text-white shadow-lg transition hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-300"
-          aria-label="Scroll to Panic Mode"
-        >
-          🛡️ Panic Mode
-        </button>
-      ) : null}
+     <MobileBottomNav activeTab={activeTab} onNavigate={scrollToSection} isDark={isDark} />
     </div>
   );
 }
