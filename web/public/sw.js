@@ -1,23 +1,16 @@
-const VERSION = "bharat-app-v1";
-const APP_SHELL_CACHE = `${VERSION}-shell`;
-const STATIC_CACHE = `${VERSION}-static`;
-const APP_SHELL = ["/", "/manifest.json", "/icon-192.svg", "/icon-512.svg"];
+const VERSION = "bharat-app-v3";
+const CACHE_NAME = `${VERSION}-app`;
+const APP_SHELL = ["/", "/~offline", "/manifest.json"];
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(APP_SHELL_CACHE).then((cache) => cache.addAll(APP_SHELL)),
-  );
+  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)));
   self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(
-        keys
-          .filter((key) => ![APP_SHELL_CACHE, STATIC_CACHE].includes(key))
-          .map((key) => caches.delete(key)),
-      ),
+      Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))),
     ),
   );
   self.clients.claim();
@@ -27,41 +20,26 @@ self.addEventListener("fetch", (event) => {
   const request = event.request;
   const url = new URL(request.url);
 
-  if (request.method !== "GET" || url.origin !== self.location.origin) {
-    return;
-  }
+  if (request.method !== "GET" || url.origin !== self.location.origin) return;
 
-  if (url.pathname.startsWith("/api/")) {
+  if (request.mode === "navigate") {
     event.respondWith(networkFirst(request));
     return;
   }
 
-  if (request.mode === "navigate") {
-    event.respondWith(networkFirst(request, "/"));
-    return;
-  }
-
-  if (["script", "style", "font", "image"].includes(request.destination)) {
-    event.respondWith(cacheFirst(request));
-  }
+  event.respondWith(cacheFirst(request));
 });
 
-async function networkFirst(request, fallbackPath) {
+async function networkFirst(request) {
   try {
     const response = await fetch(request);
-    if (response.ok && !request.url.includes("/api/")) {
-      const cache = await caches.open(APP_SHELL_CACHE);
+    if (response.ok) {
+      const cache = await caches.open(CACHE_NAME);
       await cache.put(request, response.clone());
     }
     return response;
   } catch {
-    const cached = await caches.match(request);
-    if (cached) return cached;
-    if (fallbackPath) {
-      const fallback = await caches.match(fallbackPath);
-      if (fallback) return fallback;
-    }
-    return new Response("Offline", { status: 503, statusText: "Offline" });
+    return (await caches.match(request)) || (await caches.match("/~offline"));
   }
 }
 
@@ -72,7 +50,7 @@ async function cacheFirst(request) {
   try {
     const response = await fetch(request);
     if (response.ok) {
-      const cache = await caches.open(STATIC_CACHE);
+      const cache = await caches.open(CACHE_NAME);
       await cache.put(request, response.clone());
     }
     return response;

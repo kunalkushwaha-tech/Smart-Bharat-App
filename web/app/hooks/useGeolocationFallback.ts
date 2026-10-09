@@ -72,11 +72,17 @@ export function useGeolocationFallback(
   options: UseGeolocationFallbackOptions = {},
 ): UseGeolocationFallbackResult {
   const onFlushAlertsRef = useRef(options.onFlushAlerts);
-  const [location, setLocation] = useState<Location | null>(null);
-  const [isFallback, setIsFallback] = useState(false);
-  const [isOffline, setIsOffline] = useState(false);
+  const [location, setLocation] = useState<Location | null>(() =>
+    typeof window === "undefined" ? null : readCachedLocation(),
+  );
+  const [isFallback, setIsFallback] = useState(() =>
+    typeof window !== "undefined" && readCachedLocation() !== null,
+  );
+  const [isOffline, setIsOffline] = useState(() => typeof navigator !== "undefined" && !navigator.onLine);
   const [error, setError] = useState<GeolocationPositionError | null>(null);
-  const [pendingAlertCount, setPendingAlertCount] = useState(0);
+  const [pendingAlertCount, setPendingAlertCount] = useState(() =>
+    typeof window === "undefined" ? 0 : readQueuedAlerts().length,
+  );
 
   useEffect(() => {
     onFlushAlertsRef.current = options.onFlushAlerts;
@@ -94,12 +100,6 @@ export function useGeolocationFallback(
   }, []);
 
   useEffect(() => {
-    const cachedLocation = readCachedLocation();
-    setLocation(cachedLocation);
-    setIsFallback(cachedLocation !== null);
-    setIsOffline(!navigator.onLine);
-    setPendingAlertCount(readQueuedAlerts().length);
-
     const handleOnline = () => {
       setIsOffline(false);
       void flushQueuedAlerts();
