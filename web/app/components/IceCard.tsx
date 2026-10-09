@@ -13,25 +13,77 @@ type IceData = {
 
 const storageKey = "smart-bharat-ice-card";
 const initialData: IceData = { bloodGroup: "", allergies: "", conditions: "", contactName: "", contactNumber: "" };
+const appEncryptionKey = "bharat-app-ice-card-storage-v1";
+
+const toBase64 = (bytes: Uint8Array) => {
+  let binary = "";
+  bytes.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
+  return window.btoa(binary);
+};
+
+const fromBase64 = (value: string) => {
+  const binary = window.atob(value);
+  return Uint8Array.from(binary, (character) => character.charCodeAt(0));
+};
+
+async function getEncryptionKey() {
+  // This static app key protects against plain-text localStorage exposure, not a determined extension that can inspect app code.
+  const digest = await window.crypto.subtle.digest("SHA-256", new TextEncoder().encode(appEncryptionKey));
+  return window.crypto.subtle.importKey("raw", digest, { name: "AES-GCM" }, false, ["encrypt", "decrypt"]);
+}
+
+async function encryptIceData(data: IceData) {
+  const iv = window.crypto.getRandomValues(new Uint8Array(12));
+  const encrypted = await window.crypto.subtle.encrypt(
+    { name: "AES-GCM", iv },
+    await getEncryptionKey(),
+    new TextEncoder().encode(JSON.stringify(data)),
+  );
+  return `${toBase64(iv)}.${toBase64(new Uint8Array(encrypted))}`;
+}
+
+async function decryptIceData(value: string) {
+  const [encodedIv, encodedData] = value.split(".");
+  if (!encodedIv || !encodedData) {
+    throw new Error("Invalid encrypted ICE Card data.");
+  }
+  const decrypted = await window.crypto.subtle.decrypt(
+    { name: "AES-GCM", iv: fromBase64(encodedIv) },
+    await getEncryptionKey(),
+    fromBase64(encodedData),
+  );
+  return JSON.parse(new TextDecoder().decode(decrypted)) as Partial<IceData>;
+}
 
 export default function IceCard() {
   const [data, setData] = useState<IceData>(initialData);
   const [qrCode, setQrCode] = useState("");
 
   useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem(storageKey);
-      if (saved) setData({ ...initialData, ...JSON.parse(saved) });
-    } catch {
-      // Ignore malformed local-only data and let the user create a fresh card.
-    }
+    const restoreCard = async () => {
+      try {
+        const saved = window.localStorage.getItem(storageKey);
+        if (!saved) return;
+        try {
+          setData({ ...initialData, ...(await decryptIceData(saved)) });
+        } catch {
+          // Read cards created before encryption so the next save can migrate them.
+          setData({ ...initialData, ...(JSON.parse(saved) as Partial<IceData>) });
+        }
+      } catch {
+        // Ignore malformed local-only data and let the user create a fresh card.
+      }
+    };
+    void restoreCard();
   }, []);
 
   const update = (field: keyof IceData, value: string) => setData((current) => ({ ...current, [field]: value }));
   const cardText = `ICE CARD\nBlood group: ${data.bloodGroup || "Not provided"}\nAllergies: ${data.allergies || "None provided"}\nMedical conditions: ${data.conditions || "None provided"}\nEmergency contact: ${data.contactName || "Not provided"} (${data.contactNumber || "Not provided"})`;
 
   async function saveCard() {
-    window.localStorage.setItem(storageKey, JSON.stringify(data));
+    window.localStorage.setItem(storageKey, await encryptIceData(data));
     setQrCode(await QRCode.toDataURL(cardText, { width: 240, margin: 2 }));
   }
 
