@@ -113,6 +113,9 @@ export default function FloatingAIChat() {
               Send
             </button>
           </form>
+          <p className="px-3 pb-3 text-xs text-[#FFB15C]">
+            ⚠️ Please do not share your OTP, CVV, PIN, or bank account details here.
+          </p>
         </section>
       ) : null}
 

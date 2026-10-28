@@ -7,16 +7,24 @@ import VisitorCounter from "./components/VisitorCounter";
 import PanicMode from "./components/PanicMode";
 import HeroSection from "./components/HeroSection";
 import MobileBottomNav from "./components/MobileBottomNav";
+import MobileEmergencyBar from "./components/MobileEmergencyBar";
+import FloatingAIChat from "./components/FloatingAIChat";
+import PrivacyTrustBadge from "./components/PrivacyTrustBadge";
+import EmergencyErrorBoundary from "./components/EmergencyErrorBoundary";
+import IceCard from "./components/IceCard";
+import SpeechInput from "./components/SpeechInput";
+import CommunityScamAlerts from "./components/CommunityScamAlerts";
+import CyberAwarenessCertificate from "./components/CyberAwarenessCertificate";
+import { requestAIChat } from "./lib/aiChat";
 
 
 type Theme = "light" | "dark";
-type Language = "en" | "hi";
 type TabId = "emergency" | "ai" | "complaints" | "security" | "academy";
 type ChatMessage = { role: "user" | "bot"; text: string };
 type EmergencyContact = {
   number: string;
   label: string;
-  icon: string;
+  icon?: string;
   websiteUrl?: string;
   websiteLabel?: string;
 };
@@ -53,77 +61,6 @@ type ComplaintCategory = {
   description: string;
   guidance: string;
 };
-
-const translations = {
-  en: {
-    tagline: "One Platform for Cyber Safety & Citizen Services",
-    languageLabel: "Language",
-    english: "English",
-    hindi: "Hindi",
-    emergency: "Emergency Services",
-    ai: "AI Companion & Schemes",
-    complaints: "Complaints & Grievances",
-    security: "Security Tools & Audit",
-    academy: "Cyber Awareness Academy",
-    callNow: "Call Now",
-    official: "Official",
-    schemeFinder: "Scheme Eligibility Finder",
-    age: "Age",
-    state: "State",
-    annualIncome: "Annual Income (₹)",
-    category: "Category",
-    allStates: "All States",
-    allCategories: "All Categories",
-    evaluate: "Evaluate Matching Schemes",
-    eligibilityCount: (count: number) => `You may be eligible for ${count} scheme${count === 1 ? "" : "s"}`,
-    contact: "Contact",
-    contactText: "Questions or feedback? Reach out to the Bharat App team.",
-    emailUs: "Email Us",
-    helplines: {
-      "112": "Unified Emergency Response",
-      "108": "Ambulance Emergency Services",
-      "101": "Fire Emergency Services",
-      "1930": "Cybercrime Financial Fraud Helpline",
-      "1098": "Child Helpline",
-      "181": "Women Safety Helpline",
-      "1915": "National Consumer Helpline",
-    },
-  },
-  hi: {
-    tagline: "साइबर सुरक्षा और नागरिक सेवाओं के लिए एक मंच",
-    languageLabel: "भाषा",
-    english: "अंग्रेज़ी",
-    hindi: "हिंदी",
-    emergency: "आपातकालीन सेवाएं",
-    ai: "एआई सहायक और योजनाएं",
-    complaints: "शिकायतें और जन-शिकायतें",
-    security: "सुरक्षा उपकरण और ऑडिट",
-    academy: "साइबर जागरूकता अकादमी",
-    callNow: "अभी कॉल करें",
-    official: "आधिकारिक",
-    schemeFinder: "योजना पात्रता खोजक",
-    age: "आयु",
-    state: "राज्य",
-    annualIncome: "वार्षिक आय (₹)",
-    category: "श्रेणी",
-    allStates: "सभी राज्य",
-    allCategories: "सभी श्रेणियां",
-    evaluate: "मिलान योजनाएं देखें",
-    eligibilityCount: (count: number) => `आप ${count} योजना${count === 1 ? "" : "ओं"} के लिए पात्र हो सकते हैं`,
-    contact: "संपर्क",
-    contactText: "प्रश्न या सुझाव हैं? भारत ऐप टीम से संपर्क करें।",
-    emailUs: "ईमेल करें",
-    helplines: {
-      "112": "एकीकृत आपातकालीन सहायता",
-      "108": "एम्बुलेंस आपातकालीन सेवा",
-      "101": "अग्निशमन आपातकालीन सेवा",
-      "1930": "साइबर अपराध वित्तीय धोखाधड़ी हेल्पलाइन",
-      "1098": "बाल हेल्पलाइन",
-      "181": "महिला सुरक्षा हेल्पलाइन",
-      "1915": "राष्ट्रीय उपभोक्ता हेल्पलाइन",
-    },
-  },
-} as const;
 
 const quickPrompts = [
   "Check this URL",
@@ -535,7 +472,21 @@ export default function Home() {
   const isDark = theme === "dark";
   const [language, setLanguage] = useState<Language>("en");
   const text = translations[language];
+  const copy = {
+    age: language === "hi" ? "आयु" : language === "mr" ? "वय" : "Age",
+    annualIncome: language === "hi" ? "वार्षिक आय (₹)" : language === "mr" ? "वार्षिक उत्पन्न (₹)" : "Annual Income (₹)",
+    allStates: text.allStates,
+    eligibilityCount: (count: number) => language === "hi"
+      ? `आप ${count} योजना के लिए पात्र हो सकते हैं`
+      : language === "mr"
+        ? `तुम्ही ${count} योजनांसाठी पात्र असू शकता`
+        : `You may be eligible for ${count} scheme${count === 1 ? "" : "s"}`,
+    contact: language === "hi" ? "संपर्क" : language === "mr" ? "संपर्क" : "Contact",
+    contactText: language === "hi" ? "प्रश्न या सुझाव हैं? भारत ऐप टीम से संपर्क करें।" : language === "mr" ? "प्रश्न किंवा अभिप्राय? भारत अॅप टीमशी संपर्क साधा." : "Questions or feedback? Reach out to the Bharat App team.",
+    emailUs: language === "hi" ? "ईमेल करें" : language === "mr" ? "ईमेल करा" : "Email Us",
+  };
   const [highContrast, setHighContrast] = useState(false);
+  const [highContrastInitialized, setHighContrastInitialized] = useState(false);
 
   const [activeTab, setActiveTab] = useState<TabId>("emergency");
   const [panicShortcut, setPanicShortcut] = useState(false);
@@ -557,9 +508,11 @@ export default function Home() {
   const [complaintHistory, setComplaintHistory] = useState<ComplaintHistoryItem[]>([]);
   const [complaintError, setComplaintError] = useState<string | null>(null);
   const [complaintDownloaded, setComplaintDownloaded] = useState(false);
+  const [selectedComplaintCategory, setSelectedComplaintCategory] = useState(complaintCategories[0].title);
+  const [complaintReference, setComplaintReference] = useState("");
+  const [trackingGuidance, setTrackingGuidance] = useState("");
 
   const [schemeAge, setSchemeAge] = useState("");
-  const [schemeState, setSchemeState] = useState("");
   const [schemeIncome, setSchemeIncome] = useState("");
   const [schemeState, setSchemeState] = useState("");
   const [selectedSchemeName, setSelectedSchemeName] = useState<string | null>(null);
@@ -589,11 +542,14 @@ export default function Home() {
 
   useEffect(() => {
     setHighContrast(localStorage.getItem("high-contrast") === "true");
+    setHighContrastInitialized(true);
   }, []);
 
   useEffect(() => {
-    localStorage.setItem("high-contrast", String(highContrast));
-  }, [highContrast]);
+    if (highContrastInitialized) {
+      localStorage.setItem("high-contrast", String(highContrast));
+    }
+  }, [highContrast, highContrastInitialized]);
 
   useEffect(() => {
     const savedHistory = localStorage.getItem(COMPLAINT_HISTORY_KEY);
@@ -965,12 +921,14 @@ Apply: ${scheme.applyUrl}`,
     }
     setSchemeError(null);
 
+    const profileAge = age ?? 0;
+    const profileIncome = income ?? 0;
     const matched = schemeCards.filter((scheme) => {
       const appliesToState = scheme.central || !scheme.relevantStates || !schemeState || scheme.relevantStates.includes(schemeState);
       return appliesToState
-        && age >= scheme.minAge
-        && (scheme.maxAge === undefined || age <= scheme.maxAge)
-        && (scheme.maxIncome === null || income <= scheme.maxIncome);
+        && profileAge >= scheme.minAge
+        && (scheme.maxAge === undefined || profileAge <= scheme.maxAge)
+        && (scheme.maxIncome === null || profileIncome <= scheme.maxIncome);
     });
     setMatchingSchemeNames(matched.map((scheme) => scheme.name));
     setSelectedSchemeName(matched[0]?.name ?? null);
@@ -1234,7 +1192,16 @@ Apply: ${scheme.applyUrl}`,
               ))}
             </div>
             <IceCard />
-            <PanicMode focusRequested={panicShortcut} />
+            <div className="mt-5 rounded-xl border border-[#FF9933]/50 bg-[#2a1118] p-4">
+              <h3 className="text-lg font-bold text-[#FFB15C]">Cyber Fraud? Act Fast</h3>
+              <p className="mt-2 text-sm">Call <a className="font-bold underline" href="tel:1930">1930</a> immediately for financial cyber fraud.</p>
+              <div className="mt-3 flex flex-wrap gap-3">
+                <a className="rounded-full bg-[#d93838] px-4 py-2 text-sm font-bold text-white" href="tel:1930">Call 1930</a>
+                <a className="rounded-full bg-[#FF9933] px-4 py-2 text-sm font-bold text-white" href="https://cybercrime.gov.in" target="_blank" rel="noopener noreferrer">Report Online</a>
+              </div>
+              <p className="mt-3 text-sm font-semibold">Never share OTP, UPI PIN or passwords.</p>
+            </div>
+            <PanicMode />
             <NearbyServicesMap isDark={isDark} />
           </section>
         </EmergencyErrorBoundary>
@@ -1302,6 +1269,9 @@ Apply: ${scheme.applyUrl}`,
                   {isChatLoading ? "Sending..." : "Send"}
                 </button>
               </div>
+              <p className="mt-2 text-xs font-semibold text-[#FFB15C]">
+                ⚠️ Please do not share your OTP, CVV, PIN, or bank account details here.
+              </p>
               <p className="mt-2 text-xs text-gray-400">⚠️ AI-generated guidance may not always be accurate.</p>
               {chatError ? <p className="mt-2 text-sm text-[#ffb0b0]">{chatError}</p> : null}
               <div
@@ -1456,6 +1426,34 @@ Apply: ${scheme.applyUrl}`,
           }`}
         >
           <h2 className="mb-4 text-2xl font-bold">{text.complaints}</h2>
+          <div className="mb-6 grid gap-3 md:grid-cols-3">
+            {complaintCategories.map((category) => (
+              <button
+                key={category.title}
+                type="button"
+                onClick={() => selectComplaintCategory(category.title)}
+                className={`rounded-xl border p-4 text-left ${selectedComplaintCategory === category.title ? "border-[#FF9933] bg-[#FF9933]/10" : isDark ? "border-white/10 bg-[#122A4D]" : "border-[#0B1F3A]/10 bg-[#F9FBFF]"}`}
+              >
+                <h3 className="font-bold">{category.title}</h3>
+                <p className="mt-1 text-sm opacity-80">{category.description}</p>
+              </button>
+            ))}
+          </div>
+          <div className={`mb-6 rounded-xl border p-4 ${isDark ? "border-white/10 bg-[#122A4D]" : "border-[#0B1F3A]/10 bg-[#F9FBFF]"}`}>
+            <h3 className="font-bold">Track Complaint</h3>
+            <p className="mt-1 text-sm opacity-80">Informational guidance only. No live backend is connected to complaint tracking.</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <input
+                value={complaintReference}
+                onChange={(event) => setComplaintReference(event.target.value)}
+                className={`min-w-[14rem] flex-1 rounded-lg border px-3 py-2 ${isDark ? "border-white/20 bg-[#050B14]" : "border-[#0B1F3A]/20 bg-white"}`}
+                placeholder="Complaint reference number"
+                aria-label="Complaint reference number"
+              />
+              <button type="button" onClick={trackComplaint} className="rounded-full bg-[#0B1F3A] px-4 py-2 font-semibold text-white">Check guidance</button>
+            </div>
+            {trackingGuidance ? <p className="mt-3 text-sm">{trackingGuidance}</p> : null}
+          </div>
           <label htmlFor="complaint-input" className="mb-2 block text-sm font-semibold">
             Describe your complaint
           </label>
@@ -1635,6 +1633,17 @@ Apply: ${scheme.applyUrl}`,
           }`}
         >
           <h2 className="mb-4 text-2xl font-bold">{text.academy}</h2>
+          <div className="mb-6 grid gap-4 md:grid-cols-2">
+            {academyGuides.map((guide) => (
+              <article key={guide.title} className={`rounded-xl border p-4 ${isDark ? "border-white/10 bg-[#122A4D]" : "border-[#0B1F3A]/10 bg-[#F9FBFF]"}`}>
+                <h3 className="text-lg font-bold">{guide.title}</h3>
+                <p className="mt-2 text-sm opacity-85">{guide.explanation}</p>
+                <ul className="mt-3 list-disc space-y-1 pl-5 text-sm">
+                  {guide.protections.map((protection) => <li key={protection}>{protection}</li>)}
+                </ul>
+              </article>
+            ))}
+          </div>
           <CommunityScamAlerts />
           {quizCompletedScore === null ? (
             <>
@@ -1696,31 +1705,32 @@ Apply: ${scheme.applyUrl}`,
         >
           <h2 className="mb-2 text-2xl font-bold">{copy.contact}</h2>
           <p className="mb-4 text-sm opacity-85">{copy.contactText}</p>
-          <a href="mailto:support@bharatapp.example" className="inline-flex rounded-full bg-[#FF9933] px-5 py-2 font-semibold text-white">
-            {copy.emailUs}
-          </a>
+          {process.env.NEXT_PUBLIC_CONTACT_EMAIL ? (
+            <a href={`mailto:${process.env.NEXT_PUBLIC_CONTACT_EMAIL}`} className="inline-flex rounded-full bg-[#FF9933] px-5 py-2 font-semibold text-white">
+              {copy.emailUs}
+            </a>
+          ) : null}
         </section>
       </main>
       <footer className="mt-16 pb-24 pt-8 text-center text-gray-400 md:pb-8">
-  <div className="flex justify-center gap-6 mb-3">
-    <a href="#" className="hover:text-white">About</a>
-    <Link href="/privacy" className="hover:text-white">Privacy Policy</Link>
-    <a href="https://github.com/kunalkushwaha-tech" target="_blank" className="hover:text-white">GitHub</a>
-    <a href="tel:+918126748461" className="hover:text-white">Contact</a>
-  </div>
-  <div className="flex justify-center gap-6 mb-3">
-    <a href="/about" className="hover:text-white">About</a>
-    <a href="/privacy" className="hover:text-white">Privacy Policy</a>
-    <a href="/terms" className="hover:text-white">Terms</a>
-    <a href="https://github.com/kunalkushwaha-tech" target="_blank" className="hover:text-white">GitHub</a>
-    <a href="#contact" className="hover:text-white">Contact</a>
-  </div>
-  <p className="mx-auto max-w-3xl text-xs leading-relaxed text-[#cbd5e1]">
-    Bharat App is an independent, open-access awareness platform and is not officially affiliated with any government agency.
-    Helpline numbers and scheme links point to official government sources.
-  </p>
-  <p className="text-sm">© 2026 Bharat App</p>
-</footer>
+        <div className="mb-4 flex flex-wrap justify-center gap-6">
+          <Link href="/about" className="hover:text-white">About</Link>
+          <Link href="/privacy" className="hover:text-white">Privacy Policy</Link>
+          <Link href="/terms" className="hover:text-white">Terms</Link>
+          <a href="https://github.com/kunalkushwaha-tech" target="_blank" rel="noopener noreferrer" className="hover:text-white">GitHub</a>
+          {process.env.NEXT_PUBLIC_CONTACT_EMAIL ? (
+            <a href={`mailto:${process.env.NEXT_PUBLIC_CONTACT_EMAIL}`} className="hover:text-white">Contact</a>
+          ) : null}
+        </div>
+        <p className="mx-auto max-w-3xl text-xs leading-relaxed text-[#cbd5e1]">
+          Bharat App is an independent, open-access awareness platform and is not officially affiliated with any government agency.
+          Helpline numbers and scheme links point to official government sources.
+        </p>
+        <div className="mt-4 flex justify-center"><PrivacyTrustBadge /></div>
+        <p className="mt-3 text-sm">© 2026 Bharat App</p>
+      </footer>
+      <FloatingAIChat />
+      <MobileEmergencyBar />
      <MobileBottomNav activeTab={activeTab} onNavigate={scrollToSection} isDark={isDark} />
     </div>
   );

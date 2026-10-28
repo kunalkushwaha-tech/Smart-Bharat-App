@@ -16,11 +16,11 @@ if (typeof window !== "undefined") {
 }
 
 import { useNearbyFinder, type NearbyPoint } from "../hooks/useNearbyFinder";
-import { useGeolocationFallback } from "../hooks/useGeolocationFallback";
 
 type NearbyServicesMapProps = {
   isDark: boolean;
 };
+type MapErrorBoundaryState = { hasError: boolean };
 
 const DEFAULT_CENTER: LatLngTuple = [28.6139, 77.209];
 const OVERPASS_URL = "https://overpass-api.de/api/interpreter";
@@ -49,23 +49,16 @@ class MapErrorBoundary extends Component<{ children: ReactNode; isDark: boolean 
   }
 }
 
-const DEFAULT_CENTER: LatLngTuple = [28.6139, 77.209];
-const categories: Array<{ id: Category; label: string; amenity: string }> = [
-  { id: "hospital", label: "Hospitals", amenity: "hospital" },
-  { id: "police", label: "Police Stations", amenity: "police" },
-  { id: "fire", label: "Fire Stations", amenity: "fire_station" },
-  { id: "pharmacy", label: "Pharmacies", amenity: "pharmacy" },
-];
-const categoryByAmenity: Record<string, Category> = { hospital: "hospital", police: "police", fire_station: "fire", pharmacy: "pharmacy" };
 function buildMarkerIcon(emoji: string, background: string) {
   return L.divIcon({ className: "", html: `<div style="width:30px;height:30px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:${background};color:white;font-size:15px;border:2px solid white">${emoji}</div>`, iconSize: [30, 30], iconAnchor: [15, 15] });
 }
 const iconByType = {
   user: buildMarkerIcon("📍", "#2563eb"),
   hospital: buildMarkerIcon("🏥", "#16a34a"),
+  police: buildMarkerIcon("👮", "#7c3aed"),
   cybercrime: buildMarkerIcon("🛡️", "#0891b2"),
 };
-function MapResizeHandler() {
+function MapResizeHandler({ triggerKey }: { triggerKey: string }) {
   const map = useMap();
   useEffect(() => {
     const invalidate = () => map.invalidateSize();
@@ -129,8 +122,6 @@ export default function NearbyServicesMap({ isDark }: NearbyServicesMapProps) {
   const police = useNearbyFinder(location, "police", points);
   const hospitals = useNearbyFinder(location, "hospital", points);
   const nearbyServices = useMemo(() => [...police, ...hospitals].sort((a, b) => a.distance - b.distance), [hospitals, police]);
-
-  const shouldShowMap = geoState === "ready" || geoState === "denied" || geoState === "error" || geoState === "timeout";
 
   return (
     <div className={`mt-5 rounded-xl border p-4 ${isDark ? "border-white/10 bg-[#0A1424]" : "border-[#0B1F3A]/10 bg-[#F9FBFF]"}`}>
