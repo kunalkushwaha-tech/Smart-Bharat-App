@@ -1,16 +1,20 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs/config";
 
+const pwaOptions = {
+  disable: process.env.NODE_ENV === "development",
+};
+
 const nextConfig: NextConfig = {
   async headers() {
-    const isDevelopment = process.env.NODE_ENV !== "production";
+    const isDevelopment = pwaOptions.disable;
     const contentSecurityPolicy = [
       "default-src 'self'",
       `script-src 'self' 'unsafe-inline'${isDevelopment ? " 'unsafe-eval'" : ""}`,
       "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com",
       "font-src 'self' https://cdnjs.cloudflare.com data:",
       "img-src 'self' data: blob: https://*.tile.openstreetmap.org",
-      "connect-src 'self' https://api.openai.com https://api.pwnedpasswords.com https://api.xposedornot.com https://safebrowsing.googleapis.com https://api.countapi.xyz https://*.supabase.co https://*.supabase.in https://*.sentry.io",
+      "connect-src 'self' https://api.openai.com https://api.pwnedpasswords.com https://api.xposedornot.com https://safebrowsing.googleapis.com https://api.countapi.xyz https://overpass-api.de https://*.supabase.co https://*.supabase.in https://*.sentry.io",
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'",

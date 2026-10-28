@@ -79,17 +79,6 @@ export default function RootLayout({
           rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
         />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              if ("serviceWorker" in navigator) {
-                window.addEventListener("load", function () {
-                  navigator.serviceWorker.register("/sw.js").catch(function () {});
-                });
-              }
-            `,
-          }}
-        />
       </head>
       <body className="min-h-full flex flex-col">
         <RegisterServiceWorker />

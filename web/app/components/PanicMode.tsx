@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { useGeofencing, type GeofenceZone } from "../hooks/useGeofencing";
 import { useGeolocationFallback, type PanicAlert } from "../hooks/useGeolocationFallback";
@@ -38,13 +38,19 @@ function locationLink(location: { lat: number; lng: number } | null): string {
 }
 
 export default function PanicMode() {
-  const [contacts, setContacts] = useState<EmergencyContact[]>(() =>
-    typeof window === "undefined" ? [] : readContacts(),
-  );
+  const [contacts, setContacts] = useState<EmergencyContact[]>([]);
+  const [mounted, setMounted] = useState(false);
   const [contactName, setContactName] = useState("");
   const [contactNumber, setContactNumber] = useState("");
   const [editingContactIndex, setEditingContactIndex] = useState<number | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      setMounted(true);
+      setContacts(readContacts());
+    });
+  }, []);
 
   const notify = (message: string) => {
     setToast(message);
@@ -120,12 +126,12 @@ export default function PanicMode() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h3 className="text-lg font-bold text-red-600">Panic Mode</h3>
-          {isFallback ? (
+          {mounted && isFallback ? (
             <span className="mt-1 inline-flex rounded-full bg-amber-500/15 px-2 py-1 text-xs font-semibold text-amber-700">
               Offline — using last known location
             </span>
           ) : null}
-          {isOffline && !isFallback ? <p className="mt-1 text-xs opacity-75">Offline — location will sync when online.</p> : null}
+          {mounted && isOffline && !isFallback ? <p className="mt-1 text-xs opacity-75">Offline — location will sync when online.</p> : null}
         </div>
         <button
           type="button"

@@ -6,7 +6,7 @@ const VisitorCounter = () => {
   const [count, setCount] = useState<number | null>(null);
 
   useEffect(() => {
-    fetch('https://api.countapi.xyz/hit/bharat-app-kunal/visits')
+    fetch('/api/visitor-count')
       .then((res) => res.json())
       .then((data) => setCount(data.value))
       .catch(() => setCount(null));

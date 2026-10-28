@@ -1,57 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { jsPDF } from "jspdf";
 import QRCode from "qrcode";
+import { useState } from "react";
 
 type CyberAwarenessCertificateProps = {
   score: number;
   total: number;
-  onRestart: () => void;
+  isDistinction?: boolean;
+  answers: Record<string, string>;
 };
 
-type BadgeTier = {
-  icon: string;
-  title: string;
-  description: string;
-  className: string;
-};
-
-function getBadgeTier(score: number, total: number): BadgeTier {
-  const percentage = (score / total) * 100;
-  if (percentage >= 80) {
-    return {
-      icon: "🛡️",
-      title: "Cyber Aware Citizen",
-      description: "Excellent cyber safety awareness!",
-      className: "border-[#D4AF37]/60 bg-[#D4AF37]/15 text-[#FFE9a3]",
-    };
-  }
-  if (percentage >= 50) {
-    return {
-      icon: "📘",
-      title: "Cyber Learner",
-      description: "Good progress - keep building safe habits.",
-      className: "border-[#38bdf8]/60 bg-[#38bdf8]/15 text-[#bae6fd]",
-    };
-  }
-  return {
-    icon: "🌱",
-    title: "Getting Started",
-    description: "Every safe choice is a step forward. Keep learning!",
-    className: "border-[#86efac]/60 bg-[#86efac]/15 text-[#dcfce7]",
-  };
-}
-
-function createCertificateId() {
-  const randomValues = new Uint32Array(2);
-  crypto.getRandomValues(randomValues);
-  const randomPart = Array.from(randomValues)
-    .map((value) => value.toString(36).toUpperCase().slice(-4))
-    .join("")
-    .slice(0, 8);
-  const datePart = new Date().toISOString().slice(0, 10).replaceAll("-", "");
-  return `BHRT-CYB-${randomPart.slice(0, 4)}-${randomPart.slice(4)}-${datePart}`;
-}
+const namePattern = /^[\p{L} .'-]{2,40}$/u;
 
 function drawEmblem(context: CanvasRenderingContext2D, x: number, y: number) {
   context.save();
@@ -73,70 +33,67 @@ function drawEmblem(context: CanvasRenderingContext2D, x: number, y: number) {
   }
   context.closePath();
   context.fill();
-  context.fillStyle = "#050B14";
   context.font = "bold 12px Arial";
   context.textAlign = "center";
   context.fillText("BHARAT APP", 0, 58);
   context.restore();
 }
 
-async function drawCertificate(
-  name: string,
-  score: number,
-  total: number,
-  badge: BadgeTier,
-  certificateId: string,
-) {
-  const verificationUrl = `https://smartbharat.me/verify?id=${encodeURIComponent(certificateId)}`;
-  const qrDataUrl = await QRCode.toDataURL(verificationUrl, { width: 120, margin: 1 });
+async function drawCertificate(name: string, score: number, total: number, certificateId: string, isDistinction: boolean, issuedDate: string) {
+  const verificationUrl = `https://www.smartbharat.me/verify?id=${encodeURIComponent(certificateId)}`;
+  const qrDataUrl = await QRCode.toDataURL(verificationUrl, { width: 140, margin: 1 });
   const canvas = document.createElement("canvas");
   canvas.width = 1600;
   canvas.height = 1000;
   const context = canvas.getContext("2d");
-  if (!context) {
-    throw new Error("Certificate canvas is not available.");
-  }
-
+  if (!context) throw new Error("Certificate canvas is not available.");
+  const accent = isDistinction ? "#D4AF37" : score >= 7 ? "#38bdf8" : "#86efac";
   context.fillStyle = "#050B14";
   context.fillRect(0, 0, canvas.width, canvas.height);
-  context.strokeStyle = "#FF9933";
+  context.strokeStyle = accent;
   context.lineWidth = 18;
   context.strokeRect(42, 42, canvas.width - 84, canvas.height - 84);
-  context.strokeStyle = "#D4AF37";
+  context.strokeStyle = "#FF9933";
   context.lineWidth = 2;
   context.strokeRect(70, 70, canvas.width - 140, canvas.height - 140);
-
   context.textAlign = "center";
   context.fillStyle = "#FF9933";
   context.font = "bold 42px Arial";
-  context.fillText("BHARAT APP", canvas.width / 2, 170);
-  drawEmblem(context, 1390, 155);
+  context.fillText("BHARAT APP", 800, 150);
+  drawEmblem(context, 1390, 140);
   context.fillStyle = "#ECF2FA";
-  context.font = "bold 78px Georgia";
-  context.fillText("Certificate of Completion", canvas.width / 2, 300);
+  context.font = "bold 72px Georgia";
+  context.fillText("Certificate of Completion", 800, 275);
   context.fillStyle = "#C8D5EA";
-  context.font = "32px Arial";
-  context.fillText("Bharat App — Cyber Awareness Academy", canvas.width / 2, 375);
-  context.fillStyle = "#FF9933";
-  context.font = "bold 64px Georgia";
-  context.fillText(name, canvas.width / 2, 535);
+  context.font = "30px Arial";
+  context.fillText("Bharat App — Cyber Awareness Academy", 800, 345);
+  if (isDistinction) {
+    context.fillStyle = "#D4AF37";
+    context.beginPath();
+    context.moveTo(1190, 390); context.lineTo(1510, 390); context.lineTo(1450, 470); context.lineTo(1250, 470); context.closePath(); context.fill();
+    context.fillStyle = "#050B14";
+    context.font = "bold 28px Arial";
+    context.fillText("DISTINCTION", 1350, 438);
+  }
+  context.fillStyle = accent;
+  let nameFontSize = 64;
+  while (nameFontSize > 32) {
+    context.font = `bold ${nameFontSize}px Arial`;
+    if (context.measureText(name).width <= 1050) break;
+    nameFontSize -= 2;
+  }
+  context.fillText(name, 800, 515);
   context.fillStyle = "#ECF2FA";
   context.font = "bold 34px Arial";
   const percentage = Math.round((score / total) * 100);
-  context.fillText(`Scored ${score}/${total} (${percentage}%)`, canvas.width / 2, 625);
-  context.fillStyle = "#D4AF37";
-  context.font = "bold 36px Arial";
-  context.fillText(`${badge.icon} ${badge.title}`, canvas.width / 2, 710);
+  context.fillText(`Scored ${score}/${total} (${percentage}%)`, 800, 590);
   context.fillStyle = "#C8D5EA";
-  context.font = "28px Arial";
-  context.fillText(new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }), 390, 815);
-
+  context.font = "23px Arial";
+  context.fillText("Topics covered: Emergency & Helplines • Fraud & Payments • Online Safety • Government Schemes", 800, 650);
+  context.fillText(new Date(`${issuedDate}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }), 390, 815);
   context.strokeStyle = "#C8D5EA";
   context.lineWidth = 2;
-  context.beginPath();
-  context.moveTo(1080, 785);
-  context.lineTo(1460, 785);
-  context.stroke();
+  context.beginPath(); context.moveTo(1080, 785); context.lineTo(1460, 785); context.stroke();
   context.fillStyle = "#FF9933";
   context.font = "italic 58px 'Brush Script MT', 'Segoe Script', cursive";
   context.fillText("Kunal Kushwaha", 1270, 850);
@@ -145,82 +102,130 @@ async function drawCertificate(
   context.fillText("Founder, Bharat App", 1270, 895);
   const qrImage = new Image();
   qrImage.src = qrDataUrl;
-  await new Promise<void>((resolve, reject) => {
-    qrImage.onload = () => resolve();
-    qrImage.onerror = () => reject(new Error("Certificate QR code could not be loaded."));
-  });
-  context.drawImage(qrImage, 110, 775, 120, 120);
+  await new Promise<void>((resolve, reject) => { qrImage.onload = () => resolve(); qrImage.onerror = () => reject(new Error("Certificate QR code could not be loaded.")); });
+  context.drawImage(qrImage, 110, 775, 140, 140);
   context.textAlign = "left";
-  context.fillStyle = "#D4AF37";
+  context.fillStyle = accent;
   context.font = "bold 20px Arial";
   context.fillText(`Certificate ID: ${certificateId}`, 300, 860);
   context.fillStyle = "#C8D5EA";
   context.font = "20px Arial";
   context.fillText("Verify at smartbharat.me/verify", 300, 895);
-
   return canvas;
 }
 
-export default function CyberAwarenessCertificate({ score, total, onRestart }: CyberAwarenessCertificateProps) {
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+export default function CyberAwarenessCertificate({ score, total, isDistinction = false, answers }: CyberAwarenessCertificateProps) {
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [certificateId, setCertificateId] = useState<string | null>(null);
-  const badge = getBadgeTier(score, total);
+  const [certificateIssuedDate, setCertificateIssuedDate] = useState<string | null>(null);
 
-  useEffect(() => {
-    setCertificateId(createCertificateId());
-  }, []);
+  async function getCertificate() {
+    if (certificateId) {
+      return {
+        certificateId,
+        issuedDate: certificateIssuedDate ?? new Date().toISOString().slice(0, 10),
+      };
+    }
+    const response = await fetch("/api/certificate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        answers: Object.entries(answers).map(([questionId, optionId]) => ({ questionId, optionId })),
+      }),
+    });
+    const data = (await response.json()) as { certificateId?: string; issuedDate?: string; error?: string };
+    if (!response.ok || !data.certificateId) {
+      throw new Error(data.error ?? "Unable to issue the certificate.");
+    }
+    setCertificateId(data.certificateId);
+    const issuedDate = data.issuedDate ?? (data.certificateId.split("-").at(-1)?.length === 8
+      ? `${data.certificateId.split("-").at(-1)?.slice(0, 4)}-${data.certificateId.split("-").at(-1)?.slice(4, 6)}-${data.certificateId.split("-").at(-1)?.slice(6)}`
+      : new Date().toISOString().slice(0, 10));
+    setCertificateIssuedDate(issuedDate);
+    return {
+      certificateId: data.certificateId,
+      issuedDate,
+    };
+  }
 
-  function downloadCertificate() {
+  async function createCanvas() {
     const trimmedName = name.trim();
-    if (!trimmedName) {
-      setError("Enter your name to create the certificate.");
-      return;
+    if (!namePattern.test(trimmedName)) {
+      setError("Enter a name of 2-40 characters using letters, spaces, periods, apostrophes, or hyphens.");
+      return null;
     }
     setError(null);
-    const id = certificateId ?? createCertificateId();
-    if (!certificateId) {
-      setCertificateId(id);
+    const certificate = await getCertificate();
+    return drawCertificate(trimmedName, score, total, certificateId ?? certificate.certificateId, isDistinction, certificate.issuedDate);
+  }
+
+  async function downloadPng() {
+    try {
+      const canvas = await createCanvas();
+      if (!canvas) return;
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
+      if (!blob) throw new Error("Unable to create the certificate image.");
+      downloadBlob(blob, "bharat-app-cyber-awareness-certificate.png");
+    } catch (downloadError) {
+      setError(downloadError instanceof Error ? downloadError.message : "Unable to create the certificate image.");
     }
-    void drawCertificate(trimmedName, score, total, badge, id).then((canvas) => canvas.toBlob((blob) => {
-      if (!blob) {
-        setError("Unable to create the certificate image. Please try again.");
-        return;
-      }
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "bharat-app-cyber-awareness-certificate.png";
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-    }, "image/png")).catch((drawError: unknown) => {
-      setError(drawError instanceof Error ? drawError.message : "Unable to create the certificate image. Please try again.");
+  }
+
+  async function downloadPdf() {
+    try {
+      const canvas = await createCanvas();
+      if (!canvas) return;
+      const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+      pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, 297, 210);
+      pdf.save("bharat-app-cyber-awareness-certificate.pdf");
+    } catch (downloadError) {
+      setError(downloadError instanceof Error ? downloadError.message : "Unable to create the certificate PDF.");
+    }
+  }
+
+  function addToLinkedIn() {
+    if (!certificateId) return;
+    const issued = new Date();
+    const verificationUrl = `https://www.smartbharat.me/verify?id=${encodeURIComponent(certificateId)}`;
+    const params = new URLSearchParams({
+      startTask: "CERTIFICATION_NAME",
+      name: "Cyber Awareness Academy Certificate",
+      organizationName: "Bharat App",
+      issueYear: String(issued.getFullYear()),
+      issueMonth: String(issued.getMonth() + 1),
+      certUrl: verificationUrl,
+      certId: certificateId,
     });
+    window.open(`https://www.linkedin.com/profile/add?${params.toString()}`, "_blank", "noopener,noreferrer");
   }
 
   return (
     <div className="mt-5 rounded-xl border border-white/15 bg-[#050B14] p-4">
-      <div className={`rounded-xl border p-4 ${badge.className}`}>
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="text-3xl" aria-hidden="true">{badge.icon}</p>
-            <h3 className="mt-1 text-xl font-bold">{badge.title}</h3>
-            <p className="mt-1 text-sm">{badge.description}</p>
-          </div>
-          <p className="text-3xl font-extrabold">{score}/{total}<span className="ml-1 text-base font-semibold">score</span></p>
-        </div>
+      <div className={`rounded-xl border p-4 ${isDistinction ? "border-[#D4AF37]/60 bg-[#D4AF37]/15 text-[#FFE9a3]" : "border-[#38bdf8]/60 bg-[#38bdf8]/15 text-[#bae6fd]"}`}>
+        <h3 className="text-xl font-bold">{isDistinction ? "Cyber Aware Citizen — Distinction" : "Cyber Aware Citizen"}</h3>
+        <p className="mt-1">{score}/{total} score</p>
       </div>
-      <div className="mt-4">
-        <label htmlFor="certificate-name" className="block text-sm font-semibold">Name on certificate</label>
-        <div className="mt-2 flex flex-wrap gap-2">
-          <input id="certificate-name" value={name} onChange={(event) => setName(event.target.value)} placeholder="Enter your name" className="min-w-0 flex-1 rounded-lg border border-white/20 bg-[#0A1424] px-3 py-2 text-[#ECF2FA]" />
-          <button type="button" onClick={downloadCertificate} className="rounded-lg bg-[#FF9933] px-4 py-2 font-semibold text-white hover:bg-[#e58621]">Download Certificate</button>
-        </div>
-        {error ? <p className="mt-2 text-sm text-[#ffb0b0]" role="alert">{error}</p> : null}
+      <label htmlFor="certificate-name" className="mt-4 block text-sm font-semibold">Name on certificate</label>
+      <input id="certificate-name" maxLength={40} value={name} onChange={(event) => setName(event.target.value)} placeholder="Enter your name" className="mt-2 w-full rounded-lg border border-white/20 bg-[#0A1424] px-3 py-2 text-[#ECF2FA] focus:outline-none focus:ring-2 focus:ring-[#FF9933]" />
+      <div className="mt-3 flex flex-wrap gap-2">
+        <button type="button" onClick={downloadPng} className="rounded-lg bg-[#FF9933] px-4 py-2 font-semibold text-white">Download PNG</button>
+        <button type="button" onClick={downloadPdf} className="rounded-lg bg-[#122A4D] px-4 py-2 font-semibold text-white">Download PDF</button>
+        <button type="button" onClick={addToLinkedIn} className="rounded-lg border border-[#38bdf8] px-4 py-2 font-semibold text-[#bae6fd]">Add to LinkedIn</button>
       </div>
-      <button type="button" onClick={onRestart} className="mt-4 rounded-full bg-[#122A4D] px-5 py-2 text-sm font-semibold text-white hover:bg-[#173963]">Try Quiz Again</button>
+      {error ? <p className="mt-2 text-sm text-[#ffb0b0]" role="alert">{error}</p> : null}
+      <p className="mt-3 text-xs opacity-70">Your name is used only in the downloaded certificate and is not stored or sent anywhere.</p>
     </div>
   );
 }

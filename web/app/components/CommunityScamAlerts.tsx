@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type ScamReport = {
   id: string;
@@ -58,21 +58,59 @@ export default function CommunityScamAlerts() {
   const [description, setDescription] = useState("");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [reportError, setReportError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const reportRequestRef = useRef<AbortController | null>(null);
 
-  async function loadReports() {
+  const loadReports = useCallback(async () => {
     if (!configured) return;
-    const response = await fetch("/api/scam-reports");
-    if (!response.ok) {
-      setMessage("Reports are temporarily unavailable. Please try again later.");
-      return;
+    reportRequestRef.current?.abort();
+    const controller = new AbortController();
+    reportRequestRef.current = controller;
+    let timedOut = false;
+    const timeoutId = window.setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, 8000);
+    try {
+      const response = await fetch("/api/scam-reports", { signal: controller.signal });
+      if (controller.signal.aborted) return;
+      if (!response.ok) {
+        setReportError(response.status >= 500 ? "server" : "response");
+        return;
+      }
+      let data: unknown;
+      try {
+        data = await response.json();
+      } catch {
+        setReportError("json");
+        return;
+      }
+      if (!data || typeof data !== "object" || !Array.isArray((data as { reports?: unknown }).reports)) {
+        setReportError("json");
+        return;
+      }
+      if (controller.signal.aborted) return;
+      setReports((data as { reports: ScamReport[] }).reports);
+      setReportError(null);
+    } catch (error: unknown) {
+      if (controller.signal.aborted && !timedOut) return;
+      setReportError(timedOut || (error instanceof Error && error.name === "TimeoutError") ? "timeout" : "network");
+    } finally {
+      window.clearTimeout(timeoutId);
+      if (reportRequestRef.current === controller) {
+        reportRequestRef.current = null;
+      }
     }
-    const data = (await response.json()) as { reports?: ScamReport[] };
-    setReports(data.reports ?? []);
-  }
+  }, [configured]);
 
   useEffect(() => {
     void loadReports();
-  }, [configured]);
+    return () => {
+      reportRequestRef.current?.abort();
+      reportRequestRef.current = null;
+    };
+  }, [loadReports, retryCount]);
 
   async function submitReport(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -89,26 +127,39 @@ export default function CommunityScamAlerts() {
 
     setSubmitting(true);
     setMessage("");
-    const response = await fetch("/api/scam-reports", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ scam_type: scamType, contact_info: contactInfo.trim(), description: description.trim() || null }),
-    });
-    setSubmitting(false);
-    if (!response.ok) {
-      const data = (await response.json().catch(() => null)) as { error?: string } | null;
-      if (response.status === 429) {
-        setMessage(data?.error || "Please wait before submitting another report.");
-      } else {
-        setMessage(data?.error || "We could not submit that report. Please try again.");
+    try {
+      const controller = new AbortController();
+      const timeoutId = window.setTimeout(() => controller.abort(), 8000);
+      let response: Response;
+      try {
+        response = await fetch("/api/scam-reports", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ scam_type: scamType, contact_info: contactInfo.trim(), description: description.trim() || null }),
+          signal: controller.signal,
+        });
+      } finally {
+        window.clearTimeout(timeoutId);
       }
-      return;
+      if (!response.ok) {
+        const data = (await response.json().catch(() => null)) as { error?: string } | null;
+        if (response.status === 429) {
+          setMessage(data?.error || "Please wait before submitting another report.");
+        } else {
+          setMessage(data?.error || "We could not submit that report. Please try again.");
+        }
+        return;
+      }
+      localStorage.setItem(rateLimitKey, String(Date.now()));
+      setContactInfo("");
+      setDescription("");
+      setMessage("Thanks. Your anonymous report was shared with the community.");
+      await loadReports();
+    } catch {
+      setMessage("We could not submit that report. Please try again.");
+    } finally {
+      setSubmitting(false);
     }
-    localStorage.setItem(rateLimitKey, String(Date.now()));
-    setContactInfo("");
-    setDescription("");
-    setMessage("Thanks. Your anonymous report was shared with the community.");
-    await loadReports();
   }
 
   if (!configured) {
@@ -135,7 +186,12 @@ export default function CommunityScamAlerts() {
       {message && <p className="mt-3 text-sm text-[#C8D5EA]">{message}</p>}
       <div className="mt-5 border-t border-white/10 pt-4">
         <h4 className="font-semibold">Recent Scam Reports</h4>
-        {reports.length === 0 ? <p className="mt-2 text-sm opacity-75">No reports yet.</p> : (
+        {reportError ? (
+          <div className="mt-2 rounded-lg border border-amber-300/30 bg-amber-500/10 p-3 text-sm text-amber-100">
+            <p>Scam alerts abhi load nahi ho paa rahe. Thodi der baad try karein.</p>
+            <button type="button" onClick={() => setRetryCount((count) => count + 1)} className="mt-2 rounded-full bg-[#FF9933] px-3 py-1.5 font-semibold text-white">Retry</button>
+          </div>
+        ) : reports.length === 0 ? <p className="mt-2 text-sm opacity-75">No reports yet.</p> : (
           <ul className="mt-2 space-y-2">
             {reports.map((report) => (
               <li key={report.id} className="rounded-lg bg-[#0A1424] p-3 text-sm">

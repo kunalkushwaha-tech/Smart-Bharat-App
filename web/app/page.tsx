@@ -7,19 +7,19 @@ import VisitorCounter from "./components/VisitorCounter";
 import PanicMode from "./components/PanicMode";
 import HeroSection from "./components/HeroSection";
 import MobileBottomNav from "./components/MobileBottomNav";
+import CyberAwarenessCertificate from "./components/CyberAwarenessCertificate";
+import CommunityScamAlerts from "./components/CommunityScamAlerts";
+import EmergencyErrorBoundary from "./components/EmergencyErrorBoundary";
+import IceCard from "./components/IceCard";
+import SpeechInput from "./components/SpeechInput";
+import { emergencyContacts } from "./lib/emergencyContacts";
+import { quizQuestions, shuffleQuiz, type QuizQuestion } from "./lib/quizData";
 
 
 type Theme = "light" | "dark";
-type Language = "en" | "hi";
+type Language = "en" | "hi" | "mr";
 type TabId = "emergency" | "ai" | "complaints" | "security" | "academy";
 type ChatMessage = { role: "user" | "bot"; text: string };
-type EmergencyContact = {
-  number: string;
-  label: string;
-  icon: string;
-  websiteUrl?: string;
-  websiteLabel?: string;
-};
 type Scheme = {
   name: string;
   minAge: number;
@@ -38,11 +38,6 @@ type ComplaintHistoryItem = {
   output: string;
   analysis: string;
 };
-type Language = "en" | "hi" | "mr";
-type QuizQuestion = {
-  question: string;
-  options: Array<{ text: string; correct: boolean }>;
-};
 type AcademyGuide = {
   title: string;
   explanation: string;
@@ -54,7 +49,7 @@ type ComplaintCategory = {
   guidance: string;
 };
 
-const translations = {
+const legacyTranslations = {
   en: {
     tagline: "One Platform for Cyber Safety & Citizen Services",
     languageLabel: "Language",
@@ -131,43 +126,6 @@ const quickPrompts = [
   "How to secure my account?",
   "I got a suspicious payment request",
   "How to report cyber fraud?",
-];
-
-const emergencyContacts: EmergencyContact[] = [
-  { number: "112", label: "Unified Emergency Response" },
-  { number: "108", label: "Ambulance Emergency Services" },
-  { number: "101", label: "Fire Emergency Services" },
-  {
-    number: "1930",
-    label: "Cybercrime Financial Fraud Helpline",
-    icon: "💳",
-    websiteUrl: "https://cybercrime.gov.in",
-    websiteLabel: "cybercrime.gov.in",
-  },
-  {
-    number: "1098",
-    label: "Child Helpline",
-    icon: "👶",
-    websiteUrl: "https://www.childlineindia.org",
-    websiteLabel: "childlineindia.org",
-  },
-  { number: "181", label: "Women Safety Helpline" },
-  { number: "108", label: "Ambulance" },
-  { number: "101", label: "Fire" },
-  {
-  number: "1915",
-  label: "National Consumer Helpline",
-  icon: "🛒",
-  websiteUrl: "https://consumerhelpline.gov.in",
-  websiteLabel: " consumerhelpline.gov.in",
-},
-];
-
-const primaryEmergencyServices = [
-  { number: "112", title: "Unified Emergency Response", subtitle: "Police • Fire • Medical", icon: "🚨" },
-  { number: "108", title: "Ambulance Emergency Services", subtitle: "Medical Emergency", icon: "🚑" },
-  { number: "101", title: "Fire Emergency Services", subtitle: "Fire & Rescue", icon: "🚒" },
-  { number: "1930", title: "Cybercrime Financial Fraud Helpline", subtitle: "Report Financial Cyber Fraud", icon: "🛡️" },
 ];
 
 const indianStates = [
@@ -293,6 +251,7 @@ const translatedScamWarnings: Record<Language, string[]> = {
 const translations = {
   en: {
     language: "Language",
+    languageLabel: "Language",
     tagline: "One Platform for Cyber Safety & Citizen Services",
     emergency: "Emergency Services",
     ai: "AI Companion & Schemes",
@@ -304,9 +263,16 @@ const translations = {
     allStates: "All States & UTs",
     evaluate: "Evaluate All Matching Schemes",
     tickerLabel: "Trending scam alerts",
+    age: "Age",
+    annualIncome: "Annual Income (₹)",
+    contact: "Contact",
+    contactText: "Questions or feedback? Reach out to the Bharat App team.",
+    emailUs: "Email Us",
+    eligibilityCount: (count: number) => `You may be eligible for ${count} scheme${count === 1 ? "" : "s"}`,
   },
   hi: {
     language: "भाषा",
+    languageLabel: "भाषा",
     tagline: "साइबर सुरक्षा और नागरिक सेवाओं का एक मंच",
     emergency: "आपातकालीन सेवाएं",
     ai: "एआई सहायक और योजनाएं",
@@ -318,9 +284,16 @@ const translations = {
     allStates: "सभी राज्य और केंद्र शासित प्रदेश",
     evaluate: "सभी मिलती योजनाएं जांचें",
     tickerLabel: "लोकप्रिय ठगी अलर्ट",
+    age: "आयु",
+    annualIncome: "वार्षिक आय (₹)",
+    contact: "संपर्क",
+    contactText: "प्रश्न या सुझाव हैं? भारत ऐप टीम से संपर्क करें।",
+    emailUs: "ईमेल करें",
+    eligibilityCount: (count: number) => `आप ${count} योजना${count === 1 ? "" : "ओं"} के लिए पात्र हो सकते हैं`,
   },
   mr: {
     language: "भाषा",
+    languageLabel: "भाषा",
     tagline: "सायबर सुरक्षा आणि नागरिक सेवांसाठी एक व्यासपीठ",
     emergency: "आपत्कालीन सेवा",
     ai: "एआय सहाय्यक आणि योजना",
@@ -332,6 +305,12 @@ const translations = {
     allStates: "सर्व राज्ये आणि केंद्रशासित प्रदेश",
     evaluate: "सर्व जुळणाऱ्या योजना तपासा",
     tickerLabel: "ट्रेंडिंग फसवणूक सूचना",
+    age: "वय",
+    annualIncome: "वार्षिक उत्पन्न (₹)",
+    contact: "संपर्क",
+    contactText: "प्रश्न किंवा सूचना आहेत? भारत अॅप टीमशी संपर्क साधा.",
+    emailUs: "ईमेल करा",
+    eligibilityCount: (count: number) => `तुम्ही ${count} योजनांसाठी पात्र असू शकता`,
   },
 } as const;
 
@@ -340,44 +319,6 @@ const translatedEmergencyLabels = {
   hi: ["एकीकृत आपातकालीन प्रतिक्रिया", "एम्बुलेंस आपातकालीन सेवा", "अग्निशमन आपातकालीन सेवा", "साइबर अपराध वित्तीय धोखाधड़ी हेल्पलाइन", "बाल हेल्पलाइन", "महिला सुरक्षा हेल्पलाइन", "राष्ट्रीय उपभोक्ता हेल्पलाइन"],
   mr: ["एकत्रित आपत्कालीन प्रतिसाद", "रुग्णवाहिका आपत्कालीन सेवा", "अग्निशमन आपत्कालीन सेवा", "सायबर गुन्हे आर्थिक फसवणूक हेल्पलाइन", "बाल हेल्पलाइन", "महिला सुरक्षा हेल्पलाइन", "राष्ट्रीय ग्राहक हेल्पलाइन"],
 } as const;
-
-const academyQuizQuestions: QuizQuestion[] = [
-  {
-    question: 'You get a call from "your bank" asking for your OTP. What do you do?',
-    options: [
-      { text: 'Never share the OTP', correct: true },
-      { text: 'Share the OTP', correct: false },
-    ],
-  },
-  {
-    question: 'An SMS says you won a lottery and asks you to click a link to claim it. What do you do?',
-    options: [
-      { text: 'Ignore it, this is a scam', correct: true },
-      { text: 'Click the link immediately', correct: false },
-    ],
-  },
-  {
-    question: 'An unknown SMS says your electricity will be cut tonight unless you click a link. What do you do?',
-    options: [
-      { text: 'Ignore the link and verify on the official portal', correct: true },
-      { text: 'Click immediately and enter personal data', correct: false },
-    ],
-  },
-  {
-    question: 'Someone on WhatsApp asks for your OTP to "verify" a photo you sent. What do you do?',
-    options: [
-      { text: 'Never send it, even if it seems genuine', correct: true },
-      { text: 'Send it if they seem trustworthy', correct: false },
-    ],
-  },
-  {
-    question: 'A website offers a job with a very high salary but asks for an advance registration fee. What do you do?',
-    options: [
-      { text: 'Treat it as a red flag and avoid paying', correct: true },
-      { text: 'Pay the fee to secure the job', correct: false },
-    ],
-  },
-];
 
 const academyGuides: AcademyGuide[] = [
   {
@@ -470,6 +411,15 @@ const complaintCategories: ComplaintCategory[] = [
   },
 ];
 
+async function requestAIChat(message: string): Promise<{ response: Response; data: { reply?: string; error?: string } }> {
+  const response = await fetch("/api/ai-chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message }),
+  });
+  return { response, data: (await response.json()) as { reply?: string; error?: string } };
+}
+
 const NearbyServicesMap = dynamic(() => import("./components/NearbyServicesMap"), {
   ssr: false,
   loading: () => (
@@ -529,12 +479,90 @@ Regards,
 Sovereign Resident Node.`;
 }
 
+function QuizResults({
+  questions,
+  answers,
+  score,
+  bestScore,
+  isDark,
+  onRestart,
+}: {
+  questions: QuizQuestion[];
+  answers: Record<string, string>;
+  score: number;
+  bestScore: number | null;
+  isDark: boolean;
+  onRestart: () => void;
+}) {
+  const percentage = score * 10;
+  const tier = score >= 9
+    ? { title: "Cyber Aware Citizen — Distinction", className: "border-[#D4AF37] bg-[#D4AF37]/15 text-[#8a6500]" }
+    : score >= 7
+      ? { title: "Cyber Aware Citizen", className: "border-[#128807] bg-[#128807]/15 text-[#128807]" }
+      : score >= 5
+        ? { title: "Cyber Learner", className: "border-[#38bdf8] bg-[#38bdf8]/15 text-[#0369a1]" }
+        : { title: "Getting Started", className: "border-[#86efac] bg-[#86efac]/15 text-[#166534]" };
+  const categories = ["Emergency & Helplines", "Fraud & Payments", "Online Safety", "Government Schemes"] as const;
+  const breakdown = categories.map((category) => {
+    const categoryQuestions = questions.filter((question) => question.category === category);
+    const correct = categoryQuestions.filter((question) => question.options.find((option) => option.id === answers[question.id])?.correct).length;
+    return { category, correct, total: categoryQuestions.length };
+  });
+  const weakest = [...breakdown].sort((a, b) => (a.correct / a.total) - (b.correct / b.total))[0];
+  const wrongAnswers = questions.filter((question) => !question.options.find((option) => option.id === answers[question.id])?.correct);
+  const shareMessage = encodeURIComponent(`I scored ${score}/10 in the Cyber Awareness quiz! Learn safer online habits at https://www.smartbharat.me`);
+
+  return (
+    <div>
+      <div className={`rounded-xl border p-5 ${tier.className}`}>
+        <p className="text-3xl font-extrabold">{score}/10 ({percentage}%)</p>
+        <p className="mt-2 text-xl font-bold">{tier.title}</p>
+        <p className="mt-1 text-sm">{score >= 7 ? "Great work — keep these safe habits every day." : "Keep learning — every safe choice makes a difference."}</p>
+      </div>
+      <h3 className="mt-6 text-lg font-bold">Category breakdown</h3>
+      <div className="mt-3 grid gap-3">
+        {breakdown.map((item) => (
+          <div key={item.category}>
+            <div className="flex justify-between text-sm"><span>{item.category}</span><span>{item.correct}/{item.total}</span></div>
+            <div className="mt-1 h-2 rounded-full bg-white/15"><div className="h-full rounded-full bg-[#FF9933]" style={{ width: `${(item.correct / item.total) * 100}%` }} /></div>
+          </div>
+        ))}
+      </div>
+      <p className="mt-4 text-sm" role="status">Advice: revise {weakest.category} to strengthen your weakest area.</p>
+      {wrongAnswers.length > 0 ? (
+        <details className="mt-5 rounded-lg border border-white/10 p-3">
+          <summary className="cursor-pointer font-semibold">Review answers ({wrongAnswers.length} wrong)</summary>
+          <div className="mt-3 grid gap-4">
+            {wrongAnswers.map((question) => (
+              <div key={question.id} className="text-sm">
+                <p className="font-semibold">{question.question}</p>
+                <p className="mt-1 text-[#f87171]">Your answer: {question.options.find((option) => option.id === answers[question.id])?.text ?? "Not answered"}</p>
+                <p className="mt-1 text-[#4ade80]">Correct answer: {question.options.find((option) => option.correct)?.text}</p>
+                <p className="mt-1 opacity-80">{question.explanation}</p>
+              </div>
+            ))}
+          </div>
+        </details>
+      ) : <p className="mt-5 text-sm font-semibold text-[#4ade80]">Perfect score — all answers are correct!</p>}
+      {bestScore !== null ? <p className="mt-4 text-sm opacity-75">Best score saved on this device: {bestScore}/10</p> : null}
+      <div className="mt-5 flex flex-wrap gap-2">
+        <a href={`https://wa.me/?text=${shareMessage}`} target="_blank" rel="noreferrer" className="rounded-full bg-[#25D366] px-4 py-2 text-sm font-semibold text-white">Share on WhatsApp</a>
+        <button type="button" onClick={onRestart} className="rounded-full bg-[#122A4D] px-4 py-2 text-sm font-semibold text-white">Try Again</button>
+      </div>
+      {score >= 7 ? <CyberAwarenessCertificate score={score} total={10} answers={answers} isDistinction={score >= 9} /> : (
+        <p className={`mt-5 rounded-lg p-3 text-sm ${isDark ? "bg-white/5" : "bg-[#0B1F3A]/5"}`}>Score 7/10 or more to unlock your certificate.</p>
+      )}
+    </div>
+  );
+}
+
 export default function Home() {
   const [theme, setTheme] = useState<Theme>("dark");
   const [themeInitialized, setThemeInitialized] = useState(false);
   const isDark = theme === "dark";
   const [language, setLanguage] = useState<Language>("en");
   const text = translations[language];
+  const copy = text;
   const [highContrast, setHighContrast] = useState(false);
 
   const [activeTab, setActiveTab] = useState<TabId>("emergency");
@@ -557,19 +585,26 @@ export default function Home() {
   const [complaintHistory, setComplaintHistory] = useState<ComplaintHistoryItem[]>([]);
   const [complaintError, setComplaintError] = useState<string | null>(null);
   const [complaintDownloaded, setComplaintDownloaded] = useState(false);
+  const [selectedComplaintCategory, setSelectedComplaintCategory] = useState("");
+  const [complaintReference, setComplaintReference] = useState("");
+  const [trackingGuidance, setTrackingGuidance] = useState("");
 
   const [schemeAge, setSchemeAge] = useState("");
   const [schemeState, setSchemeState] = useState("");
   const [schemeIncome, setSchemeIncome] = useState("");
-  const [schemeState, setSchemeState] = useState("");
   const [selectedSchemeName, setSelectedSchemeName] = useState<string | null>(null);
   const [matchingSchemeNames, setMatchingSchemeNames] = useState<string[] | null>(null);
   const [schemeEvaluation, setSchemeEvaluation] = useState("");
   const [schemeError, setSchemeError] = useState<string | null>(null);
+  const [quizQuestionsInPlay, setQuizQuestionsInPlay] = useState<QuizQuestion[]>(quizQuestions);
   const [quizIndex, setQuizIndex] = useState(0);
-  const [quizAnswered, setQuizAnswered] = useState<boolean | null>(null);
+  const [quizSelectedOption, setQuizSelectedOption] = useState<string | null>(null);
+  const [quizAnswers, setQuizAnswers] = useState<Record<string, string>>({});
   const [quizScore, setQuizScore] = useState(0);
   const [quizCompletedScore, setQuizCompletedScore] = useState<number | null>(null);
+  const [quizCompletedAnswers, setQuizCompletedAnswers] = useState<Record<string, string>>({});
+  const [quizBestScore, setQuizBestScore] = useState<number | null>(null);
+  const [quizStarted, setQuizStarted] = useState(false);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
@@ -589,6 +624,13 @@ export default function Home() {
 
   useEffect(() => {
     setHighContrast(localStorage.getItem("high-contrast") === "true");
+  }, []);
+
+  useEffect(() => {
+    const savedBestScore = Number.parseInt(localStorage.getItem("cyber-awareness-best-score") ?? "", 10);
+    if (Number.isFinite(savedBestScore) && savedBestScore >= 0) {
+      setQuizBestScore(savedBestScore);
+    }
   }, []);
 
   useEffect(() => {
@@ -968,9 +1010,9 @@ Apply: ${scheme.applyUrl}`,
     const matched = schemeCards.filter((scheme) => {
       const appliesToState = scheme.central || !scheme.relevantStates || !schemeState || scheme.relevantStates.includes(schemeState);
       return appliesToState
-        && age >= scheme.minAge
-        && (scheme.maxAge === undefined || age <= scheme.maxAge)
-        && (scheme.maxIncome === null || income <= scheme.maxIncome);
+        && (age === null || age >= scheme.minAge)
+        && (age === null || scheme.maxAge === undefined || age <= scheme.maxAge)
+        && (income === null || scheme.maxIncome === null || income <= scheme.maxIncome);
     });
     setMatchingSchemeNames(matched.map((scheme) => scheme.name));
     setSelectedSchemeName(matched[0]?.name ?? null);
@@ -994,30 +1036,50 @@ Apply: ${scheme.applyUrl}`,
     setSchemeEvaluation(summary);
   };
 
-  const currentQuiz = academyQuizQuestions[quizIndex];
+  const currentQuiz = quizQuestionsInPlay[quizIndex];
+  const correctAnswer = currentQuiz.options.find((option) => option.correct);
 
-  const handleQuizAnswer = (isCorrect: boolean) => {
-    if (quizAnswered !== null) {
+  const startQuiz = () => {
+    setQuizStarted(true);
+    setQuizQuestionsInPlay(shuffleQuiz(quizQuestions));
+    setQuizIndex(0);
+    setQuizSelectedOption(null);
+    setQuizAnswers({});
+    setQuizScore(0);
+    setQuizCompletedAnswers({});
+    setQuizCompletedScore(null);
+  };
+
+  const handleQuizAnswer = (optionId: string) => {
+    if (quizSelectedOption !== null) {
       return;
     }
-    setQuizAnswered(isCorrect);
-    const nextScore = quizScore + (isCorrect ? 1 : 0);
-    setQuizScore(nextScore);
-    if (quizIndex >= academyQuizQuestions.length - 1) {
-      setQuizCompletedScore(nextScore);
-    }
+    setQuizSelectedOption(optionId);
+    setQuizAnswers((previous) => ({ ...previous, [currentQuiz.id]: optionId }));
   };
 
   const moveToNextQuiz = () => {
-    if (quizIndex >= academyQuizQuestions.length - 1) {
-      setQuizIndex(0);
-      setQuizScore(0);
-      setQuizAnswered(null);
-      setQuizCompletedScore(null);
+    if (quizSelectedOption === null) {
       return;
     }
-    setQuizIndex((prev) => prev + 1);
-    setQuizAnswered(null);
+    const nextAnswers = { ...quizAnswers, [currentQuiz.id]: quizSelectedOption };
+    const nextScore = quizQuestionsInPlay.reduce(
+      (score, question) => score + (question.options.find((option) => option.id === nextAnswers[question.id])?.correct ? 1 : 0),
+      0,
+    );
+    setQuizScore(nextScore);
+    if (quizIndex >= quizQuestionsInPlay.length - 1) {
+      setQuizCompletedAnswers(nextAnswers);
+      setQuizCompletedScore(nextScore);
+      if (quizBestScore === null || nextScore > quizBestScore) {
+        localStorage.setItem("cyber-awareness-best-score", String(nextScore));
+        setQuizBestScore(nextScore);
+      }
+      return;
+    }
+    setQuizAnswers(nextAnswers);
+    setQuizIndex((previous) => previous + 1);
+    setQuizSelectedOption(null);
   };
 
   const speakScamWarnings = () => {
@@ -1160,32 +1222,6 @@ Apply: ${scheme.applyUrl}`,
             isDark ? "border-[#d93838]/50 bg-[#2a1118]" : "border-[#d93838]/30 bg-[#fff2f2]"
           }`}
         >
-          <h2 className="mb-4 text-2xl font-bold">Emergency Services</h2>
-          <PanicMode />
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {emergencyContacts.map((item) => (
-              <div
-                key={item.number}
-                className={`hover-lift rounded-xl border p-4 ${
-                  isDark ? "border-white/10 bg-[#122A4D]" : "border-[#0B1F3A]/10 bg-[#F9FBFF]"
-                }`}
-              >
-                <p className="text-3xl font-extrabold text-[#FF9933]">{item.number}</p>
-                <p className="mt-1 text-sm">{item.label}</p>
-                <a href={`tel:${item.number}`} className="mt-3 inline-block bg-red-600 text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-red-700">Call Now</a>
-                {item.websiteUrl ? (
-                  <a
-                    href={item.websiteUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-2 inline-flex text-xs font-semibold text-[#FF9933] underline"
-                  >
-                    Official: {item.websiteLabel}
-                  </a>
-                ) : null}
-              </div>
-            ))}
-          </div>
           <button
             type="button"
             onClick={speakScamWarnings}
@@ -1207,7 +1243,7 @@ Apply: ${scheme.applyUrl}`,
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {emergencyContacts.map((item) => (
                 <div
-                  key={item.number}
+                  key={`${item.number}-${item.title}`}
                   className={`hover-lift rounded-xl border p-4 ${
                     isDark ? "border-white/10 bg-[#122A4D]" : "border-[#0B1F3A]/10 bg-[#F9FBFF]"
                   }`}
@@ -1216,9 +1252,10 @@ Apply: ${scheme.applyUrl}`,
                     <span aria-hidden="true">{item.icon}</span>{" "}
                     <span>{item.number}</span>
                   </p>
-                  <p className="mt-1 text-sm">{translatedEmergencyLabels[language][emergencyContacts.indexOf(item)]}</p>
+                  <p className="mt-1 text-sm">{translatedEmergencyLabels[language][emergencyContacts.indexOf(item)] ?? item.title}</p>
+                  <p className="mt-1 text-xs opacity-75">{item.subtitle}</p>
                   <div className="mt-3 flex flex-wrap items-center gap-3">
-                    <a aria-label={`Call ${item.label} at ${item.number}`} href={`tel:${item.number.replace(/\D/g, "")}`} className="inline-block bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 rounded-full">Call Now</a>
+                    <a aria-label={`Call ${item.title} at ${item.number}`} href={`tel:${item.number.replace(/\D/g, "")}`} className="inline-block bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 rounded-full">Call Now</a>
                     {item.websiteUrl ? (
                       <a
                         href={item.websiteUrl}
@@ -1234,7 +1271,7 @@ Apply: ${scheme.applyUrl}`,
               ))}
             </div>
             <IceCard />
-            <PanicMode focusRequested={panicShortcut} />
+            <PanicMode />
             <NearbyServicesMap isDark={isDark} />
           </section>
         </EmergencyErrorBoundary>
@@ -1636,25 +1673,42 @@ Apply: ${scheme.applyUrl}`,
         >
           <h2 className="mb-4 text-2xl font-bold">{text.academy}</h2>
           <CommunityScamAlerts />
-          {quizCompletedScore === null ? (
+          {!quizStarted ? (
+            <div className="rounded-xl border border-white/10 bg-[#122A4D]/40 p-5">
+              <p className="text-lg font-semibold">10 sawal, lagbhag 3 minute, certificate ke liye 7/10 chahiye</p>
+              {quizBestScore !== null ? <p className="mt-2 text-sm opacity-80">Aapka best score: {quizBestScore}/10</p> : null}
+              <button type="button" onClick={startQuiz} className="mt-5 rounded-full bg-[#FF9933] px-5 py-2 font-semibold text-white hover:bg-[#e58621]">
+                Start Quiz
+              </button>
+            </div>
+          ) : quizCompletedScore === null ? (
             <>
-              <p className="mb-4 text-sm">
-                Question {quizIndex + 1} of {academyQuizQuestions.length} | Score: {quizScore}
-              </p>
-              <p className="mb-4 text-sm font-semibold">{currentQuiz.question}</p>
+              <div className="mb-4">
+                <div className="flex justify-between text-sm font-semibold">
+                  <span>Question {quizIndex + 1} of 10</span>
+                  <span>{quizScore} correct so far</span>
+                </div>
+                <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/15" aria-label={`Progress: ${quizIndex + 1} of 10`}>
+                  <div className="h-full rounded-full bg-[#FF9933] transition-all" style={{ width: `${((quizIndex + 1) / 10) * 100}%` }} />
+                </div>
+              </div>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#FF9933]">{currentQuiz.category}</p>
+              <p className="mb-4 text-lg font-semibold">{currentQuiz.question}</p>
               <div className="grid gap-3">
-                {currentQuiz.options.map((option, index) => {
-                  const selectedWrong = quizAnswered === false && option.correct === false;
-                  const selectedCorrect = quizAnswered === true && option.correct === true;
+                {currentQuiz.options.map((option) => {
+                  const selected = quizSelectedOption === option.id;
+                  const answered = quizSelectedOption !== null;
                   return (
                     <button
-                      key={`${quizIndex}-${index}`}
+                      key={option.id}
                       type="button"
-                      onClick={() => handleQuizAnswer(option.correct)}
-                      className={`rounded-xl border p-3 text-left ${
-                        selectedCorrect
+                      onClick={() => handleQuizAnswer(option.id)}
+                      aria-pressed={selected}
+                      disabled={answered}
+                      className={`rounded-xl border p-3 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF9933] ${
+                        answered && option.correct
                           ? "border-[#128807] bg-[#128807]/15"
-                          : selectedWrong
+                          : selected && !option.correct
                             ? "border-[#d93838] bg-[#d93838]/15"
                             : isDark
                               ? "border-white/20 bg-[#122A4D]"
@@ -1666,24 +1720,31 @@ Apply: ${scheme.applyUrl}`,
                   );
                 })}
               </div>
-              {quizAnswered !== null ? (
-                <p className={`mt-3 text-sm font-semibold ${quizAnswered ? "text-[#4ade80]" : "text-[#f87171]"}`}>
-                  {quizAnswered ? "Correct answer selected ✅" : "Wrong choice ❌  — dubara socho aur safe option follow karo."}
-                </p>
+              {quizSelectedOption !== null ? (
+                <div className="mt-4 rounded-lg border border-white/10 p-3" aria-live="polite">
+                  <p className={`text-sm font-semibold ${currentQuiz.options.find((option) => option.id === quizSelectedOption)?.correct ? "text-[#4ade80]" : "text-[#f87171]"}`}>
+                    {currentQuiz.options.find((option) => option.id === quizSelectedOption)?.correct ? "Correct answer!" : `Incorrect. Correct answer: ${correctAnswer?.text}`}
+                  </p>
+                  <p className="mt-2 text-sm opacity-90">{currentQuiz.explanation}</p>
+                </div>
               ) : null}
               <button
                 type="button"
                 onClick={moveToNextQuiz}
-                className="mt-4 rounded-full bg-[#0B1F3A] px-5 py-2 text-sm font-semibold text-white"
+                disabled={quizSelectedOption === null}
+                className="mt-4 rounded-full bg-[#0B1F3A] px-5 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
               >
-                Next Question
+                {quizIndex === 9 ? "See Results" : "Next Question"}
               </button>
             </>
           ) : (
-            <CyberAwarenessCertificate
+            <QuizResults
+              questions={quizQuestionsInPlay}
+              answers={quizCompletedAnswers}
               score={quizCompletedScore}
-              total={academyQuizQuestions.length}
-              onRestart={moveToNextQuiz}
+              bestScore={quizBestScore}
+              isDark={isDark}
+              onRestart={startQuiz}
             />
           )}
         </section>
@@ -1702,12 +1763,6 @@ Apply: ${scheme.applyUrl}`,
         </section>
       </main>
       <footer className="mt-16 pb-24 pt-8 text-center text-gray-400 md:pb-8">
-  <div className="flex justify-center gap-6 mb-3">
-    <a href="#" className="hover:text-white">About</a>
-    <Link href="/privacy" className="hover:text-white">Privacy Policy</Link>
-    <a href="https://github.com/kunalkushwaha-tech" target="_blank" className="hover:text-white">GitHub</a>
-    <a href="tel:+918126748461" className="hover:text-white">Contact</a>
-  </div>
   <div className="flex justify-center gap-6 mb-3">
     <a href="/about" className="hover:text-white">About</a>
     <a href="/privacy" className="hover:text-white">Privacy Policy</a>

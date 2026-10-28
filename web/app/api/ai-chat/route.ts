@@ -16,6 +16,17 @@ type ChatCompletionsResponse = {
   };
 };
 
+function getFallbackHinglishReply(message: string): string {
+  const lowerMessage = message.toLowerCase();
+  if (lowerMessage.includes("1930") || lowerMessage.includes("fraud")) {
+    return "Agar financial cyber fraud hua hai, turant 1930 par call karein aur cybercrime.gov.in par complaint darj karein.";
+  }
+  if (lowerMessage.includes("otp") || lowerMessage.includes("pin")) {
+    return "OTP, UPI PIN, CVV ya password kabhi share na karein. Bank se sirf official number par contact karein.";
+  }
+  return "Suspicious link, call ya payment request par bharosa na karein. Official app ya website se verify karein.";
+}
+
 export async function POST(req: Request) {
   if (isRateLimited(`ai-chat:${getRequestFingerprint(req)}`, 10_000)) {
     return withCors(NextResponse.json({ error: "Please wait before sending another message" }, { status: 429 }), req);

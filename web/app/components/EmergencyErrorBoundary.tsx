@@ -1,6 +1,7 @@
 "use client";
 
 import { Component, type ErrorInfo, type ReactNode } from "react";
+import { emergencyContacts } from "../lib/emergencyContacts";
 
 type EmergencyErrorBoundaryProps = {
   children: ReactNode;
@@ -41,18 +42,13 @@ export default class EmergencyErrorBoundary extends Component<
           Interactive emergency tools are temporarily unavailable. Call an emergency service directly:
         </p>
         <div className="mt-4 flex flex-wrap gap-3">
-          {[
-            ["112", "Unified Emergency"],
-            ["108", "Ambulance"],
-            ["101", "Fire Services"],
-            ["1930", "Cybercrime Helpline"],
-          ].map(([number, label]) => (
+          {emergencyContacts.map((contact) => (
             <a
-              key={number}
-              href={`tel:${number}`}
+              key={`fallback-${contact.number}-${contact.title}`}
+              href={`tel:${contact.number}`}
               className="rounded-full bg-red-600 px-4 py-2 font-semibold text-white underline-offset-2 hover:bg-red-700 focus-visible:outline"
             >
-              {number} - {label}
+              {contact.number} - {contact.title}
             </a>
           ))}
         </div>

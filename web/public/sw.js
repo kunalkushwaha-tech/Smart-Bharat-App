@@ -1,6 +1,9 @@
-const VERSION = "bharat-app-v3";
+const VERSION = "bharat-app-v4";
 const CACHE_NAME = `${VERSION}-app`;
 const APP_SHELL = ["/", "/~offline", "/manifest.json"];
+const isDevelopment = self.location.hostname === "localhost"
+  || self.location.hostname === "127.0.0.1"
+  || self.location.hostname === "[::1]";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)));
@@ -21,13 +24,16 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
 
   if (request.method !== "GET" || url.origin !== self.location.origin) return;
+  if (isDevelopment || url.pathname.startsWith("/api/") || url.pathname.startsWith("/_next/")) return;
 
   if (request.mode === "navigate") {
     event.respondWith(networkFirst(request));
     return;
   }
 
-  event.respondWith(cacheFirst(request));
+  if (url.pathname.startsWith("/_next/static/") || /\.(?:css|js|png|jpg|jpeg|svg|ico|webp|woff2?)$/i.test(url.pathname)) {
+    event.respondWith(cacheFirst(request));
+  }
 });
 
 async function networkFirst(request) {

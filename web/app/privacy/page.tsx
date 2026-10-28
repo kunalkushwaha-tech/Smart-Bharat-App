@@ -32,7 +32,7 @@ export default function PrivacyPage() {
           </section>
           <section className="rounded-xl border border-[#0B1F3A]/10 bg-white p-5">
             <h2 className="text-xl font-bold">Data storage practices</h2>
-            <p className="mt-2 text-sm">Preferences, emergency contacts, the last known location, and offline alert queues are stored locally in your browser&apos;s localStorage. The app does not provide a server account or central profile.</p>
+            <p className="mt-2 text-sm">Preferences, emergency contacts, the last known location, and offline alert queues are stored locally in your browser&apos;s localStorage. No personal data is stored for certificates; certificate IDs are verified by cryptographic signature, not from a database. The app does not provide a server account or central profile.</p>
           </section>
           <section className="rounded-xl border border-[#0B1F3A]/10 bg-white p-5">
             <h2 className="text-xl font-bold">Which APIs are used</h2>
