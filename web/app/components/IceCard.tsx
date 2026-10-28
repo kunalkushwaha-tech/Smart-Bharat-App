@@ -69,8 +69,9 @@ export default function IceCard() {
         try {
           setData({ ...initialData, ...(await decryptIceData(saved)) });
         } catch {
-          // Read cards created before encryption so the next save can migrate them.
-          setData({ ...initialData, ...(JSON.parse(saved) as Partial<IceData>) });
+          const legacyData = { ...initialData, ...(JSON.parse(saved) as Partial<IceData>) };
+          setData(legacyData);
+          window.localStorage.setItem(storageKey, await encryptIceData(legacyData));
         }
       } catch {
         // Ignore malformed local-only data and let the user create a fresh card.
