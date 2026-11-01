@@ -6,6 +6,37 @@ import { corsPreflight, withCors } from "../../lib/cors";
 
 const allowedScamTypes = new Set(["UPI", "Phishing", "Fake Job", "Investment", "OTP", "Other"]);
 const contactPattern = /^(?:\+?[0-9][0-9\s().-]{6,19}|https?:\/\/[^\s]{1,200})$/i;
+const SUPABASE_TIMEOUT_MS = 5000;
+const SUPABASE_UNAVAILABLE = "temporarily unavailable";
+
+class SupabaseTimeoutError extends Error {
+  constructor() {
+    super("Supabase request timed out");
+    this.name = "SupabaseTimeoutError";
+  }
+}
+
+class SupabaseUnavailableError extends Error {
+  constructor(cause: unknown) {
+    super("Supabase request failed", { cause });
+    this.name = "SupabaseUnavailableError";
+  }
+}
+
+async function withSupabaseTimeout<T>(operation: PromiseLike<T>): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new SupabaseTimeoutError()), SUPABASE_TIMEOUT_MS);
+  });
+  try {
+    return await Promise.race([operation, timeout]);
+  } catch (error) {
+    if (error instanceof SupabaseTimeoutError) throw error;
+    throw new SupabaseUnavailableError(error);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+}
 
 function isValidContact(value: string) {
   if (!contactPattern.test(value)) return false;
@@ -45,16 +76,19 @@ export async function GET(request: Request) {
   if (!client) return withCors(NextResponse.json({ error: "Something went wrong, please try again" }, { status: 503 }), request);
 
   try {
-    const { data, error } = await client
+    const { data, error } = await withSupabaseTimeout(client
       .from("scam_reports_public")
       .select("id, created_at, scam_type, contact_info, description")
       .order("created_at", { ascending: false })
-      .limit(20);
-    if (error) throw error;
+      .limit(20));
+    if (error) throw new SupabaseUnavailableError(error);
     return withCors(NextResponse.json({ reports: data ?? [] }), request);
   } catch (error) {
     console.error("Failed to load scam reports", error);
     Sentry.captureException(error, { tags: { tool: "scam-reports", operation: "list" } });
+    if (error instanceof SupabaseTimeoutError || error instanceof SupabaseUnavailableError) {
+      return withCors(NextResponse.json({ error: SUPABASE_UNAVAILABLE }, { status: 503 }), request);
+    }
     return withCors(NextResponse.json({ error: "Something went wrong, please try again" }, { status: 500 }), request);
   }
 }
@@ -82,16 +116,19 @@ export async function POST(request: Request) {
       return withCors(NextResponse.json({ error: "Invalid report details" }, { status: 400 }), request);
     }
 
-    const { error } = await client.from("scam_reports").insert({
+    const { error } = await withSupabaseTimeout(client.from("scam_reports").insert({
       scam_type: scamType,
       contact_info: maskContact(contactInfo),
       description: description || null,
-    });
-    if (error) throw error;
+    }));
+    if (error) throw new SupabaseUnavailableError(error);
     return withCors(NextResponse.json({ ok: true }, { status: 201 }), request);
   } catch (error) {
     console.error("Failed to submit scam report", error);
     Sentry.captureException(error, { tags: { tool: "scam-reports", operation: "submit" } });
+    if (error instanceof SupabaseTimeoutError || error instanceof SupabaseUnavailableError) {
+      return withCors(NextResponse.json({ error: SUPABASE_UNAVAILABLE }, { status: 503 }), request);
+    }
     return withCors(NextResponse.json({ error: "Something went wrong, please try again" }, { status: 500 }), request);
   }
 }

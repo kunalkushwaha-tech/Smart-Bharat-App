@@ -61,6 +61,7 @@ export default function CommunityScamAlerts() {
   const [reportError, setReportError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const reportRequestRef = useRef<AbortController | null>(null);
+  const mountedRef = useRef(false);
 
   const loadReports = useCallback(async () => {
     if (!configured) return;
@@ -74,27 +75,27 @@ export default function CommunityScamAlerts() {
     }, 8000);
     try {
       const response = await fetch("/api/scam-reports", { signal: controller.signal });
-      if (controller.signal.aborted) return;
+      if (controller.signal.aborted || !mountedRef.current) return;
       if (!response.ok) {
-        setReportError(response.status >= 500 ? "server" : "response");
+        if (mountedRef.current) setReportError(response.status >= 500 ? "server" : "response");
         return;
       }
       let data: unknown;
       try {
         data = await response.json();
       } catch {
-        setReportError("json");
+        if (mountedRef.current) setReportError("json");
         return;
       }
       if (!data || typeof data !== "object" || !Array.isArray((data as { reports?: unknown }).reports)) {
-        setReportError("json");
+        if (mountedRef.current) setReportError("json");
         return;
       }
-      if (controller.signal.aborted) return;
+      if (controller.signal.aborted || !mountedRef.current) return;
       setReports((data as { reports: ScamReport[] }).reports);
       setReportError(null);
     } catch (error: unknown) {
-      if (controller.signal.aborted && !timedOut) return;
+      if (!mountedRef.current || (controller.signal.aborted && !timedOut)) return;
       setReportError(timedOut || (error instanceof Error && error.name === "TimeoutError") ? "timeout" : "network");
     } finally {
       window.clearTimeout(timeoutId);
@@ -105,8 +106,10 @@ export default function CommunityScamAlerts() {
   }, [configured]);
 
   useEffect(() => {
+    mountedRef.current = true;
     void loadReports();
     return () => {
+      mountedRef.current = false;
       reportRequestRef.current?.abort();
       reportRequestRef.current = null;
     };

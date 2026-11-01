@@ -6,14 +6,14 @@ type HeroSectionProps = {
 
 export default function HeroSection({ onNavigate }: HeroSectionProps) {
   return (
-    <section className="mx-auto mt-8 w-full max-w-6xl rounded-2xl border border-[#FF9933]/30 bg-gradient-to-br from-[#0B1F3A] via-[#122A4D] to-[#128807] px-6 py-10 text-white shadow-lg md:px-10">
+    <section className="w-full rounded-2xl border border-[#FF9933]/30 bg-gradient-to-br from-[#0B1F3A] via-[#122A4D] to-[#128807] px-5 py-5 text-white shadow-lg md:px-8 md:py-7">
       <p className="mb-2 text-sm font-semibold uppercase tracking-[0.2em] text-[#FFB15C]">Citizen safety, simplified</p>
-      <h1 className="text-4xl font-extrabold md:text-5xl">Bharat App</h1>
-      <p className="mt-3 max-w-2xl text-lg font-semibold text-[#ECF2FA]">
+      <h1 className="text-3xl font-extrabold md:text-5xl">Bharat App</h1>
+      <p className="mt-2 max-w-2xl text-base font-semibold text-[#ECF2FA] md:text-lg">
         One Platform for Cyber Safety &amp; Citizen Services
       </p>
-      <p className="mt-2 text-base text-white/80">Stay Safe. Stay Informed. Stay Connected.</p>
-      <div className="mt-6 flex flex-wrap gap-3">
+      <p className="mt-1 text-sm text-white/80 md:text-base">Stay Safe. Stay Informed. Stay Connected.</p>
+      <div className="mt-4 flex flex-wrap gap-2">
         <button type="button" onClick={() => onNavigate("emergency")} className="rounded-full bg-[#d93838] px-5 py-2.5 font-bold text-white hover:bg-[#b42318]">
           Emergency
         </button>

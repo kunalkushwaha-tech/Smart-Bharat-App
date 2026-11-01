@@ -1103,7 +1103,7 @@ Apply: ${scheme.applyUrl}`,
       <div className="h-[6px] w-full bg-[linear-gradient(90deg,#FF9933_0%,#FF9933_33%,#fff_33%,#fff_66%,#128807_66%)]" aria-hidden="true" />
 
       <header
-        className={`sticky top-0 z-50 border-b px-5 py-4 shadow-sm md:px-8 ${
+        className={`relative z-50 border-b px-5 py-4 shadow-sm md:px-8 ${
           isDark ? "border-white/10 bg-[#0A1424]" : "border-[#0B1F3A]/10 bg-white"
         }`}
       >
@@ -1150,7 +1150,7 @@ Apply: ${scheme.applyUrl}`,
       </header>
 
       <nav
-        className={`sticky top-[73px] z-40 border-b px-5 py-3 md:px-8 ${
+        className={`sticky top-0 z-40 border-b px-5 py-3 md:px-8 ${
           isDark ? "border-white/10 bg-[#0A1424]/95" : "border-[#0B1F3A]/10 bg-white/95"
         }`}
       >
@@ -1213,19 +1213,35 @@ Apply: ${scheme.applyUrl}`,
         </div>
       </nav>
 
-      <HeroSection onNavigate={scrollToSection} />
-
-      <main className="mx-auto w-full max-w-6xl space-y-8 px-5 py-8 md:px-8">
+      <main id="main-content" className="site-container space-y-6 py-5 md:space-y-8 md:py-8">
+        <HeroSection onNavigate={scrollToSection} />
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {emergencyContacts.filter((item) => ["112", "108", "101", "1930"].includes(item.number)).map((item) => (
+            <a
+              key={`hero-${item.number}`}
+              href={`tel:${item.number.replace(/\D/g, "")}`}
+              className="flex min-h-16 flex-col items-center justify-center rounded-xl bg-[#d93838] px-2 py-2 text-center text-white shadow-md transition hover:bg-[#b42318]"
+            >
+              <span className="text-xl font-extrabold">{item.number}</span>
+              <span className="text-[11px] font-semibold leading-tight">{item.title}</span>
+            </a>
+          ))}
+        </div>
         <section
           aria-label={text.tickerLabel}
-          className={`scam-ticker relative flex items-center overflow-hidden rounded-xl border ${
+          className={`scam-ticker relative flex min-h-14 items-center overflow-hidden rounded-xl border ${
             isDark ? "border-[#d93838]/50 bg-[#2a1118]" : "border-[#d93838]/30 bg-[#fff2f2]"
           }`}
         >
+          <div className="scam-ticker-track flex min-w-max gap-10 whitespace-nowrap px-3 text-sm font-semibold">
+            {[...translatedScamWarnings[language], ...translatedScamWarnings[language]].map((warning, index) => (
+              <span key={`${language}-${index}`}>{warning}</span>
+            ))}
+          </div>
           <button
             type="button"
             onClick={speakScamWarnings}
-            className="z-10 mr-2 shrink-0 rounded-full bg-[#d93838] px-3 py-2 text-white shadow"
+            className="absolute right-2 z-10 rounded-full bg-[#d93838] px-3 py-2 text-white shadow"
             aria-label="Read scam alerts aloud"
             title="Read scam alerts aloud"
           >
@@ -1235,7 +1251,7 @@ Apply: ${scheme.applyUrl}`,
         <EmergencyErrorBoundary>
           <section
             id="emergency"
-            className={`rounded-2xl border p-6 ${
+            className={`scroll-mt-24 rounded-2xl border p-6 ${
               isDark ? "border-white/10 bg-[#0A1424]" : "border-[#0B1F3A]/10 bg-white"
             }`}
           >
@@ -1270,15 +1286,18 @@ Apply: ${scheme.applyUrl}`,
                 </div>
               ))}
             </div>
-            <IceCard />
-            <PanicMode />
+            <details className="mt-5 rounded-xl border border-[#FF9933]/25 bg-[#FF9933]/5 p-4">
+              <summary className="cursor-pointer font-bold text-[#FF9933]">Show ICE Card details</summary>
+              <div className="mt-4"><IceCard /></div>
+            </details>
+            <div id="panic-mode"><PanicMode /></div>
             <NearbyServicesMap isDark={isDark} />
           </section>
         </EmergencyErrorBoundary>
 
         <section
           id="ai"
-          className={`rounded-2xl border p-6 ${
+          className={`scroll-mt-24 rounded-2xl border p-6 ${
             isDark ? "border-white/10 bg-[#0A1424]" : "border-[#0B1F3A]/10 bg-white"
           }`}
         >
@@ -1488,7 +1507,7 @@ Apply: ${scheme.applyUrl}`,
 
         <section
           id="complaints"
-          className={`rounded-2xl border p-6 ${
+          className={`scroll-mt-24 rounded-2xl border p-6 ${
             isDark ? "border-white/10 bg-[#0A1424]" : "border-[#0B1F3A]/10 bg-white"
           }`}
         >
@@ -1579,10 +1598,11 @@ Apply: ${scheme.applyUrl}`,
             </pre>
           ) : null}
 
-          <div className={`mt-6 rounded-xl border p-4 ${
+          <details className={`mt-6 rounded-xl border p-4 ${
             isDark ? "border-white/10 bg-[#122A4D]" : "border-[#0B1F3A]/10 bg-[#F9FBFF]"
           }`}>
-            <div className="flex flex-wrap items-center justify-between gap-3">
+            <summary className="cursor-pointer font-bold">Show complaint history</summary>
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h3 className="font-bold">My Complaints</h3>
                 <p className="text-xs opacity-75">Local-only history. These formatted complaints are stored in this browser and are not synced to any server.</p>
@@ -1644,12 +1664,12 @@ Apply: ${scheme.applyUrl}`,
             ) : (
               <p className="mt-3 text-sm opacity-75">No formatted complaints saved yet.</p>
             )}
-          </div>
+          </details>
         </section>
 
         <section
           id="security"
-          className={`rounded-2xl border p-6 ${
+          className={`scroll-mt-24 rounded-2xl border p-6 ${
             isDark ? "border-white/10 bg-[#0A1424]" : "border-[#0B1F3A]/10 bg-white"
           }`}
         >
@@ -1667,12 +1687,26 @@ Apply: ${scheme.applyUrl}`,
 
         <section
           id="academy"
-          className={`rounded-2xl border p-6 ${
+          className={`scroll-mt-24 rounded-2xl border p-6 ${
             isDark ? "border-white/10 bg-[#0A1424]" : "border-[#0B1F3A]/10 bg-white"
           }`}
         >
           <h2 className="mb-4 text-2xl font-bold">{text.academy}</h2>
           <CommunityScamAlerts />
+          <details className="mt-6 rounded-xl border border-[#FF9933]/25 p-4">
+            <summary className="cursor-pointer font-bold text-[#FF9933]">Show topic guides</summary>
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              {academyGuides.map((guide) => (
+                <article key={guide.title} className="rounded-xl border border-white/10 bg-[#122A4D] p-4 shadow-sm">
+                  <h3 className="font-bold">{guide.title}</h3>
+                  <p className="mt-2 text-sm opacity-85">{guide.explanation}</p>
+                  <ul className="mt-3 list-disc space-y-1 pl-5 text-sm opacity-85">
+                    {guide.protections.map((protection) => <li key={protection}>{protection}</li>)}
+                  </ul>
+                </article>
+              ))}
+            </div>
+          </details>
           {!quizStarted ? (
             <div className="rounded-xl border border-white/10 bg-[#122A4D]/40 p-5">
               <p className="text-lg font-semibold">10 sawal, lagbhag 3 minute, certificate ke liye 7/10 chahiye</p>
@@ -1762,6 +1796,25 @@ Apply: ${scheme.applyUrl}`,
           </a>
         </section>
       </main>
+      <div className="pointer-events-none fixed inset-x-0 bottom-20 z-40 flex flex-col items-end gap-2 px-4 md:bottom-6 md:px-6">
+        {!panicModeVisible ? (
+          <button
+            type="button"
+            onClick={() => document.getElementById("panic-mode")?.scrollIntoView({ behavior: "smooth", block: "center" })}
+            className="pointer-events-auto rounded-full bg-red-600 px-4 py-2 text-sm font-bold text-white shadow-lg"
+          >
+            Panic — 112
+          </button>
+        ) : null}
+        <button
+          type="button"
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          className="pointer-events-auto rounded-full border border-[#FF9933] bg-[#122A4D] px-4 py-2 text-sm font-bold text-white shadow-lg"
+          aria-label="Back to top"
+        >
+          ↑ Top
+        </button>
+      </div>
       <footer className="mt-16 pb-24 pt-8 text-center text-gray-400 md:pb-8">
   <div className="flex justify-center gap-6 mb-3">
     <a href="/about" className="hover:text-white">About</a>
