@@ -9,9 +9,11 @@ import HeroSection from "./components/HeroSection";
 import MobileBottomNav from "./components/MobileBottomNav";
 import CyberAwarenessCertificate from "./components/CyberAwarenessCertificate";
 import CommunityScamAlerts from "./components/CommunityScamAlerts";
+import FloatingAIChat from "./components/FloatingAIChat";
 import EmergencyErrorBoundary from "./components/EmergencyErrorBoundary";
 import IceCard from "./components/IceCard";
 import SpeechInput from "./components/SpeechInput";
+import PrivacyTrustBadge from "./components/PrivacyTrustBadge";
 import { emergencyContacts } from "./lib/emergencyContacts";
 import { quizQuestions, shuffleQuiz, type QuizQuestion } from "./lib/quizData";
 
@@ -585,7 +587,7 @@ export default function Home() {
   const [complaintHistory, setComplaintHistory] = useState<ComplaintHistoryItem[]>([]);
   const [complaintError, setComplaintError] = useState<string | null>(null);
   const [complaintDownloaded, setComplaintDownloaded] = useState(false);
-  const [selectedComplaintCategory, setSelectedComplaintCategory] = useState("");
+  const [selectedComplaintCategory, setSelectedComplaintCategory] = useState("Cybercrime Complaint");
   const [complaintReference, setComplaintReference] = useState("");
   const [trackingGuidance, setTrackingGuidance] = useState("");
 
@@ -1238,6 +1240,9 @@ Apply: ${scheme.applyUrl}`,
               <span key={`${language}-${index}`}>{warning}</span>
             ))}
           </div>
+          <div className="scam-ticker-static px-3 text-sm font-semibold">
+            {translatedScamWarnings[language][0]}
+          </div>
           <button
             type="button"
             onClick={speakScamWarnings}
@@ -1292,6 +1297,15 @@ Apply: ${scheme.applyUrl}`,
             </details>
             <div id="panic-mode"><PanicMode /></div>
             <NearbyServicesMap isDark={isDark} />
+            <div className="mt-5 rounded-xl border border-red-500/30 bg-red-500/5 p-4">
+              <h3 className="text-lg font-bold text-red-600">Cyber Fraud? Act Fast</h3>
+              <p className="mt-2 text-sm">If you have lost money due to an online fraud, call 1930 immediately and report it online.</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <a href="tel:1930" className="rounded-full bg-red-600 px-4 py-2 font-semibold text-white">Call 1930</a>
+                <a href="https://cybercrime.gov.in" target="_blank" rel="noopener noreferrer" className="rounded-full border border-[#00a8c0] px-4 py-2 font-semibold text-[#007c91]">Report Online</a>
+              </div>
+              <p className="mt-3 text-sm font-semibold">Never share OTP, UPI PIN or passwords with anyone.</p>
+            </div>
           </section>
         </EmergencyErrorBoundary>
 
@@ -1302,6 +1316,17 @@ Apply: ${scheme.applyUrl}`,
           }`}
         >
           <h2 className="mb-4 text-2xl font-bold">{text.ai}</h2>
+          <details open className="mb-5 rounded-xl border border-red-500/30 bg-red-500/5 p-4">
+            <summary className="cursor-pointer text-lg font-bold text-red-600">I&apos;m Being Scammed Right Now</summary>
+            <div className="mt-3 text-sm">
+              <p>Call 1930 and report at <a className="font-semibold underline" href="https://cybercrime.gov.in" target="_blank" rel="noopener noreferrer">cybercrime.gov.in</a>.</p>
+              <ol className="mt-2 list-decimal space-y-1 pl-5">
+                <li>Call your bank to block the account or transaction.</li>
+                <li>Never share OTP.</li>
+                <li>Save screenshots and transaction IDs.</li>
+              </ol>
+            </div>
+          </details>
           <div className="grid gap-6 lg:grid-cols-2">
             <div
               className={`rounded-xl border p-4 ${
@@ -1359,6 +1384,7 @@ Apply: ${scheme.applyUrl}`,
                 </button>
               </div>
               <p className="mt-2 text-xs text-gray-400">⚠️ AI-generated guidance may not always be accurate.</p>
+              <p className="mt-2 text-xs font-semibold text-[#d97706]">⚠️ Please do not share your OTP, CVV, PIN, or bank account details here.</p>
               {chatError ? <p className="mt-2 text-sm text-[#ffb0b0]">{chatError}</p> : null}
               <div
                 className={`mt-4 max-h-72 space-y-3 overflow-y-auto rounded-lg border p-3 ${
@@ -1404,10 +1430,6 @@ Apply: ${scheme.applyUrl}`,
                   }`}
                   placeholder={copy.age}
                 />
-                <select value={schemeState} onChange={(event) => { setSchemeState(event.target.value); setMatchingSchemeNames(null); }} className={`rounded-lg border px-3 py-2 ${isDark ? "border-white/20 bg-[#050B14] text-[#ECF2FA]" : "border-[#0B1F3A]/20 bg-white text-[#111E30]"}`}>
-                  <option value="">{copy.allStates}</option>
-                  {indianStates.map((state) => <option key={state} value={state}>{state}</option>)}
-                </select>
                 <input
                   type="number"
                   min={0}
@@ -1512,6 +1534,28 @@ Apply: ${scheme.applyUrl}`,
           }`}
         >
           <h2 className="mb-4 text-2xl font-bold">{text.complaints}</h2>
+          <div className="mb-5 rounded-xl border border-[#FF9933]/30 bg-[#FF9933]/5 p-4">
+            <label htmlFor="complaint-category" className="mb-2 block text-sm font-semibold">Complaint category</label>
+            <select
+              id="complaint-category"
+              value={selectedComplaintCategory}
+              onChange={(event) => setSelectedComplaintCategory(event.target.value)}
+              className="w-full rounded-lg border border-[#0B1F3A]/20 bg-white px-3 py-2 text-[#111E30] sm:max-w-md"
+            >
+              <option value="Cybercrime Complaint">Cybercrime</option>
+              <option value="Consumer Complaint">Consumer</option>
+              <option value="Government Grievance">Government Grievance</option>
+            </select>
+            <p className="mt-2 text-sm">{complaintCategories.find((item) => item.title === selectedComplaintCategory)?.description}</p>
+            <a
+              className="mt-2 inline-flex font-semibold text-[#007c91] underline"
+              href={selectedComplaintCategory === "Cybercrime Complaint" ? "https://cybercrime.gov.in" : selectedComplaintCategory === "Consumer Complaint" ? "https://consumerhelpline.gov.in" : "https://pgportal.gov.in"}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Open official portal
+            </a>
+          </div>
           <label htmlFor="complaint-input" className="mb-2 block text-sm font-semibold">
             Describe your complaint
           </label>
@@ -1577,6 +1621,15 @@ Apply: ${scheme.applyUrl}`,
             </button>
           ) : null}
           {complaintError ? <p className="mt-2 text-sm text-[#ffb0b0]">{complaintError}</p> : null}
+          <div className="mt-6 rounded-xl border border-[#0B1F3A]/15 p-4">
+            <h3 className="font-bold">Track Complaint</h3>
+            <p className="mt-1 text-sm opacity-80">Informational only: no live backend is connected. Use the official portal that issued your reference number.</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <input value={complaintReference} onChange={(event) => setComplaintReference(event.target.value)} placeholder="Reference number" className="min-w-0 flex-1 rounded-lg border px-3 py-2" />
+              <button type="button" onClick={trackComplaint} className="rounded-full bg-[#FF9933] px-4 py-2 font-semibold text-white">Check guidance</button>
+            </div>
+            {trackingGuidance ? <p className="mt-2 text-sm">{trackingGuidance}</p> : null}
+          </div>
 
           {complaintOutput ? (
             <pre
@@ -1828,7 +1881,9 @@ Apply: ${scheme.applyUrl}`,
     Helpline numbers and scheme links point to official government sources.
   </p>
   <p className="text-sm">© 2026 Bharat App</p>
+  <div className="mt-4 flex justify-center"><PrivacyTrustBadge /></div>
 </footer>
+     <FloatingAIChat />
      <MobileBottomNav activeTab={activeTab} onNavigate={scrollToSection} isDark={isDark} />
     </div>
   );

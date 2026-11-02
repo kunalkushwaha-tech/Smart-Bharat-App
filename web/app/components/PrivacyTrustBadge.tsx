@@ -8,9 +8,9 @@ export default function PrivacyTrustBadge() {
     >
       <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" aria-hidden="true" />
       <span>
-        Emails, passwords, and complaint details are not stored on any server. Scanned URLs are
-        cached temporarily in Supabase for up to 48 hours for performance; other checks use public
-        APIs or run locally in your browser.
+        Bharat App does not store your emails, passwords, or complaint details on any server.
+        URL scan results may be cached temporarily in Supabase for up to 48 hours for performance;
+        other checks use public APIs or run locally in your browser.
       </span>
     </div>
   );

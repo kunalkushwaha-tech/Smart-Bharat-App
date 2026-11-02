@@ -110,8 +110,15 @@ body {
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
 }
 .scam-ticker-track {
+  color: currentColor;
+  transform: translateX(0);
   animation: scam-ticker-scroll 30s linear infinite;
+  animation-fill-mode: both;
   padding-right: 4rem;
+  will-change: transform;
+}
+.scam-ticker-static {
+  display: none;
 }
 .scam-ticker:hover .scam-ticker-track,
 .scam-ticker:focus-within .scam-ticker-track {
@@ -127,6 +134,9 @@ body {
 }
 @media (prefers-reduced-motion: reduce) {
   .scam-ticker-track {
-    animation: none;
+    display: none;
+  }
+  .scam-ticker-static {
+    display: block;
   }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { requestAIChat } from "../lib/aiChat";
 
 type ChatMessage = {
@@ -9,21 +9,12 @@ type ChatMessage = {
 };
 
 export default function FloatingAIChat() {
-  const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([
     { role: "bot", text: "Jai Hind! Ask me about cyber safety, complaints, or citizen services." },
   ]);
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) {
-    return null;
-  }
 
   const sendMessage = async () => {
     const query = input.trim();
@@ -113,11 +104,11 @@ export default function FloatingAIChat() {
               Send
             </button>
           </form>
-          <p className="px-3 pb-3 text-xs text-[#FFB15C]">
-            ⚠️ Please do not share your OTP, CVV, PIN, or bank account details here.
-          </p>
         </section>
       ) : null}
+      <p className={open ? "mt-2 max-w-56 text-right text-xs text-[#FFB15C]" : "sr-only"}>
+        ⚠️ Please do not share your OTP, CVV, PIN, or bank account details here.
+      </p>
 
       <button
         type="button"
