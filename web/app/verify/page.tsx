@@ -19,15 +19,18 @@ function VerifyContent() {
   const [requestError, setRequestError] = useState(false);
 
   useEffect(() => {
-    setResult(null);
-    setRequestError(false);
-    if (!certificateId) return;
-    fetch(`/api/verify?id=${encodeURIComponent(certificateId)}`)
-      .then(async (response) => {
-        if (!response.ok) throw new Error("Verification request failed");
-        setResult((await response.json()) as VerificationResult);
-      })
-      .catch(() => setRequestError(true));
+    const timer = window.setTimeout(() => {
+      setResult(null);
+      setRequestError(false);
+      if (!certificateId) return;
+      fetch(`/api/verify?id=${encodeURIComponent(certificateId)}`)
+        .then(async (response) => {
+          if (!response.ok) throw new Error("Verification request failed");
+          setResult((await response.json()) as VerificationResult);
+        })
+        .catch(() => setRequestError(true));
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [certificateId]);
 
   const valid = result?.valid === true;

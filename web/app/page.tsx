@@ -7,13 +7,11 @@ import VisitorCounter from "./components/VisitorCounter";
 import PanicMode from "./components/PanicMode";
 import HeroSection from "./components/HeroSection";
 import MobileBottomNav from "./components/MobileBottomNav";
-import CyberAwarenessCertificate from "./components/CyberAwarenessCertificate";
 import CommunityScamAlerts from "./components/CommunityScamAlerts";
-import FloatingAIChat from "./components/FloatingAIChat";
 import EmergencyErrorBoundary from "./components/EmergencyErrorBoundary";
 import IceCard from "./components/IceCard";
-import SpeechInput from "./components/SpeechInput";
 import PrivacyTrustBadge from "./components/PrivacyTrustBadge";
+import { Bot, FileText, GraduationCap, HeartPulse, Wrench } from "lucide-react";
 import { emergencyContacts } from "./lib/emergencyContacts";
 import { quizQuestions, shuffleQuiz, type QuizQuestion } from "./lib/quizData";
 
@@ -430,6 +428,9 @@ const NearbyServicesMap = dynamic(() => import("./components/NearbyServicesMap")
     </div>
   ),
 });
+const DynamicCertificate = dynamic(() => import("./components/CyberAwarenessCertificate"), { ssr: false });
+const DynamicFloatingAIChat = dynamic(() => import("./components/FloatingAIChat"), { ssr: false });
+const DynamicSpeechInput = dynamic(() => import("./components/SpeechInput"), { ssr: false });
 
 const departmentKeywordMap: Record<string, string[]> = {
   "Public Health & Sanitation": ["gutter", "drain", "garbage", "smell", "dirty", "sewage"],
@@ -551,7 +552,7 @@ function QuizResults({
         <a href={`https://wa.me/?text=${shareMessage}`} target="_blank" rel="noreferrer" className="rounded-full bg-[#25D366] px-4 py-2 text-sm font-semibold text-white">Share on WhatsApp</a>
         <button type="button" onClick={onRestart} className="rounded-full bg-[#122A4D] px-4 py-2 text-sm font-semibold text-white">Try Again</button>
       </div>
-      {score >= 7 ? <CyberAwarenessCertificate score={score} total={10} answers={answers} isDistinction={score >= 9} /> : (
+      {score >= 7 ? <DynamicCertificate score={score} total={10} answers={answers} isDistinction={score >= 9} /> : (
         <p className={`mt-5 rounded-lg p-3 text-sm ${isDark ? "bg-white/5" : "bg-[#0B1F3A]/5"}`}>Score 7/10 or more to unlock your certificate.</p>
       )}
     </div>
@@ -568,8 +569,8 @@ export default function Home() {
   const [highContrast, setHighContrast] = useState(false);
 
   const [activeTab, setActiveTab] = useState<TabId>("emergency");
-  const [panicShortcut, setPanicShortcut] = useState(false);
   const [panicModeVisible, setPanicModeVisible] = useState(true);
+  const [tickerPaused, setTickerPaused] = useState(false);
 
   const [chatInput, setChatInput] = useState("");
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
@@ -610,13 +611,19 @@ export default function Home() {
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
-    if (savedTheme === "dark" || savedTheme === "light") {
-      setTheme(savedTheme);
-    } else {
-      setTheme(window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-    }
-    setThemeInitialized(true);
+    window.setTimeout(() => {
+      if (savedTheme === "dark" || savedTheme === "light") {
+        setTheme(savedTheme);
+      } else {
+        setTheme(window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      }
+      setThemeInitialized(true);
+    }, 0);
   }, []);
+
+  useEffect(() => {
+    document.documentElement.lang = language;
+  }, [language]);
 
   useEffect(() => {
     if (themeInitialized) {
@@ -625,13 +632,13 @@ export default function Home() {
   }, [theme, themeInitialized]);
 
   useEffect(() => {
-    setHighContrast(localStorage.getItem("high-contrast") === "true");
+    window.setTimeout(() => setHighContrast(localStorage.getItem("high-contrast") === "true"), 0);
   }, []);
 
   useEffect(() => {
     const savedBestScore = Number.parseInt(localStorage.getItem("cyber-awareness-best-score") ?? "", 10);
     if (Number.isFinite(savedBestScore) && savedBestScore >= 0) {
-      setQuizBestScore(savedBestScore);
+      window.setTimeout(() => setQuizBestScore(savedBestScore), 0);
     }
   }, []);
 
@@ -645,7 +652,7 @@ export default function Home() {
     try {
       const parsed = JSON.parse(savedHistory) as unknown;
       if (Array.isArray(parsed)) {
-        setComplaintHistory(parsed.filter((item): item is ComplaintHistoryItem => (
+        const validHistory = parsed.filter((item): item is ComplaintHistoryItem => (
           typeof item === "object"
           && item !== null
           && typeof (item as ComplaintHistoryItem).id === "string"
@@ -653,7 +660,8 @@ export default function Home() {
           && typeof (item as ComplaintHistoryItem).timestamp === "string"
           && typeof (item as ComplaintHistoryItem).output === "string"
           && typeof (item as ComplaintHistoryItem).analysis === "string"
-        )));
+        ));
+        window.setTimeout(() => setComplaintHistory(validHistory), 0);
       }
     } catch (error: unknown) {
       console.warn("Could not restore complaint history from local storage.", error);
@@ -662,7 +670,6 @@ export default function Home() {
 
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get("panic") !== "true") return;
-    setPanicShortcut(true);
     window.setTimeout(() => {
       document.getElementById("panic-mode")?.scrollIntoView({ behavior: "smooth", block: "center" });
     }, 0);
@@ -1097,7 +1104,7 @@ Apply: ${scheme.applyUrl}`,
 
   return (
     <div
-      className={`${highContrast ? "high-contrast " : ""}min-h-screen transition-colors ${
+      className={`${highContrast ? "high-contrast " : ""}theme-${isDark ? "dark" : "light"} min-h-screen transition-colors ${
         isDark ? "bg-[#050B14] text-[#ECF2FA]" : "bg-[#F4F7FC] text-[#111E30]"
       }`}
     >
@@ -1132,7 +1139,7 @@ Apply: ${scheme.applyUrl}`,
             className={`rounded-full px-4 py-2 text-sm font-semibold ${
               isDark ? "bg-[#122A4D] text-[#ECF2FA]" : "bg-[#0B1F3A] text-white"
             }`}
-            aria-label="Toggle dark mode"
+            aria-label={isDark ? "Toggle dark mode: Light" : "Toggle dark mode: Dark"}
           >
             {isDark ? "☀ Light" : "🌙 Dark"}
           </button>
@@ -1165,7 +1172,7 @@ Apply: ${scheme.applyUrl}`,
             }}
             className={getTabClass("emergency", "emergency")}
           >
-            <i className="fa-solid fa-heart-pulse" aria-hidden="true" />
+            <HeartPulse className="h-4 w-4" aria-hidden="true" />
             {text.emergency}
           </a>
           <a
@@ -1176,7 +1183,7 @@ Apply: ${scheme.applyUrl}`,
             }}
             className={getTabClass("ai")}
           >
-            <i className="fa-solid fa-robot" aria-hidden="true" />
+            <Bot className="h-4 w-4" aria-hidden="true" />
             {text.ai}
           </a>
           <a
@@ -1187,7 +1194,7 @@ Apply: ${scheme.applyUrl}`,
             }}
             className={getTabClass("complaints")}
           >
-            <i className="fa-solid fa-file-invoice" aria-hidden="true" />
+            <FileText className="h-4 w-4" aria-hidden="true" />
             {text.complaints}
           </a>
           <a
@@ -1198,7 +1205,7 @@ Apply: ${scheme.applyUrl}`,
             }}
             className={getTabClass("security", "security")}
           >
-            <i className="fa-solid fa-screwdriver-wrench" aria-hidden="true" />
+            <Wrench className="h-4 w-4" aria-hidden="true" />
             {text.security}
           </a>
           <a
@@ -1209,7 +1216,7 @@ Apply: ${scheme.applyUrl}`,
             }}
             className={getTabClass("academy")}
           >
-            <i className="fa-solid fa-graduation-cap" aria-hidden="true" />
+            <GraduationCap className="h-4 w-4" aria-hidden="true" />
             {text.academy}
           </a>
         </div>
@@ -1245,6 +1252,15 @@ Apply: ${scheme.applyUrl}`,
           </div>
           <button
             type="button"
+            onClick={() => setTickerPaused((paused) => !paused)}
+            onFocus={() => setTickerPaused(true)}
+            className="absolute left-2 z-10 rounded-full border border-current bg-inherit px-3 py-2 text-xs font-semibold"
+            aria-pressed={tickerPaused}
+          >
+            {tickerPaused ? "Play alerts" : "Pause alerts"}
+          </button>
+          <button
+            type="button"
             onClick={speakScamWarnings}
             className="absolute right-2 z-10 rounded-full bg-[#d93838] px-3 py-2 text-white shadow"
             aria-label="Read scam alerts aloud"
@@ -1276,7 +1292,7 @@ Apply: ${scheme.applyUrl}`,
                   <p className="mt-1 text-sm">{translatedEmergencyLabels[language][emergencyContacts.indexOf(item)] ?? item.title}</p>
                   <p className="mt-1 text-xs opacity-75">{item.subtitle}</p>
                   <div className="mt-3 flex flex-wrap items-center gap-3">
-                    <a aria-label={`Call ${item.title} at ${item.number}`} href={`tel:${item.number.replace(/\D/g, "")}`} className="inline-block bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 rounded-full">Call Now</a>
+                    <a aria-label={`Call Now: ${item.title} at ${item.number}`} href={`tel:${item.number.replace(/\D/g, "")}`} className="inline-block bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 rounded-full">Call Now</a>
                     {item.websiteUrl ? (
                       <a
                         href={item.websiteUrl}
@@ -1371,7 +1387,7 @@ Apply: ${scheme.applyUrl}`,
                   }`}
                   placeholder="Type your query..."
                 />
-                <SpeechInput value={chatInput} onChange={setChatInput} />
+                <DynamicSpeechInput value={chatInput} onChange={setChatInput} />
                 <button
                   type="button"
                   disabled={isChatLoading}
@@ -1883,7 +1899,7 @@ Apply: ${scheme.applyUrl}`,
   <p className="text-sm">© 2026 Bharat App</p>
   <div className="mt-4 flex justify-center"><PrivacyTrustBadge /></div>
 </footer>
-     <FloatingAIChat />
+     <DynamicFloatingAIChat />
      <MobileBottomNav activeTab={activeTab} onNavigate={scrollToSection} isDark={isDark} />
     </div>
   );

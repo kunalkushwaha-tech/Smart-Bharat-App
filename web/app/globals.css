@@ -31,6 +31,50 @@ body {
   margin-inline: auto;
   padding-inline: 1.25rem;
 }
+.theme-light .text-\[\#FF9933\],
+.theme-light .text-\[\#ff9933\] {
+  color: #9a5b00 !important;
+}
+.theme-light .bg-\[\#FF9933\],
+.theme-light .bg-\[\#ff9933\] {
+  background-color: #b45309 !important;
+}
+.theme-light .text-gray-400 {
+  color: #4b5563 !important;
+}
+.theme-light .text-\[\#cbd5e1\] {
+  color: #475569 !important;
+}
+.theme-light .text-\[\#d97706\] {
+  color: #92400e !important;
+}
+.theme-light .text-red-600 {
+  color: #b91c1c !important;
+}
+.theme-light .bg-red-600 {
+  background-color: #b91c1c !important;
+}
+.bg-\[\#25D366\] {
+  background-color: #0b7a32 !important;
+}
+.bg-\[\#FF9933\] {
+  background-color: #8f4700 !important;
+}
+.theme-dark .text-red-600 {
+  color: #ff6b6b !important;
+}
+.theme-light .text-red-600 {
+  color: #b91c1c !important;
+}
+.theme-dark .text-\[\#007c91\] {
+  color: #67e8f9 !important;
+}
+.theme-light .text-\[\#007c91\] {
+  color: #006b7a !important;
+}
+.theme-dark .text-\[\#166534\] {
+  color: #bbf7d0 !important;
+}
 @media (min-width: 768px) {
   .site-container {
     padding-inline: 2rem;
@@ -121,7 +165,8 @@ body {
   display: none;
 }
 .scam-ticker:hover .scam-ticker-track,
-.scam-ticker:focus-within .scam-ticker-track {
+.scam-ticker:focus-within .scam-ticker-track,
+.scam-ticker.is-paused .scam-ticker-track {
   animation-play-state: paused;
 }
 @keyframes scam-ticker-scroll {

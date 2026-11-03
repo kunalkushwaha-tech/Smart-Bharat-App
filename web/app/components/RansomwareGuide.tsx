@@ -36,7 +36,7 @@ const RansomwareGuide = () => {
       </div>
 
       <div>
-        <h3 className="text-lg font-semibold text-red-400 mb-2">If You're Attacked</h3>
+        <h3 className="text-lg font-semibold text-red-400 mb-2">If You&apos;re Attacked</h3>
         <ol className="list-decimal list-inside space-y-2 text-gray-300">
           {ifAttackedSteps.map((step, idx) => (
             <li key={idx}>{step}</li>

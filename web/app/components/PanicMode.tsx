@@ -136,7 +136,7 @@ export default function PanicMode() {
         <button
           type="button"
           onClick={triggerPanic}
-          className="animate-pulse rounded-full bg-red-600 px-6 py-3 font-extrabold text-white shadow-lg shadow-red-600/30"
+          className="rounded-full bg-[#b91c1c] px-6 py-3 font-extrabold text-white shadow-lg shadow-red-600/30"
         >
           PANIC — CALL 112
         </button>

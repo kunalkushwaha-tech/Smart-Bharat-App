@@ -10,8 +10,6 @@ type SubmittedAnswer = {
   optionId: string;
 };
 
-const legacyIdPattern = /^BHRT-CYB-[A-Z0-9]{4}-[A-Z0-9]{4}-\d{8}$/;
-
 function createLegacyCertificateId() {
   const randomPart = randomBytes(6).toString("base64url").replace(/[^A-Z0-9]/gi, "").toUpperCase().slice(0, 8).padEnd(8, "0");
   const datePart = new Date().toISOString().slice(0, 10).replaceAll("-", "");

@@ -1,4 +1,4 @@
-import type { Metadata, Viewport } from "next";
+import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import RegisterServiceWorker from "./components/RegisterServiceWorker";
@@ -32,6 +32,7 @@ export const metadata: Metadata = {
     description: "One Platform for Cyber Safety & Citizen Services",
     images: ["/og-image.png"],
   },
+  alternates: { canonical: "/" },
 };
 
 export default function RootLayout({
@@ -74,10 +75,6 @@ export default function RootLayout({
               description: siteDescription,
             }),
           }}
-        />
-        <link
-          rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
         />
       </head>
       <body className="min-h-full flex flex-col">

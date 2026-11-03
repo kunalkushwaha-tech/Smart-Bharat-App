@@ -39,6 +39,10 @@ export default function PrivacyPage() {
             <p className="mt-2 text-sm">Depending on the tool, the app may use OpenStreetMap/Overpass for nearby services, Google Safe Browsing for URL checks, Have I Been Pwned (HIBP) for breach checks, and browser Web Share, SMS, and geolocation APIs.</p>
           </section>
           <section className="rounded-xl border border-[#0B1F3A]/10 bg-white p-5">
+            <h2 className="text-xl font-bold">Error monitoring</h2>
+            <p className="mt-2 text-sm">Optional Sentry error monitoring is inactive unless a DSN is configured. When enabled, it does not send default personal information, request bodies, query strings, or user-entered text.</p>
+          </section>
+          <section className="rounded-xl border border-[#0B1F3A]/10 bg-white p-5">
             <h2 className="text-xl font-bold">Delete or clear stored data</h2>
             <p className="mt-2 text-sm">Use the button below to remove Bharat App&apos;s local browser data. You can also revoke location permission in your browser settings.</p>
             <button type="button" onClick={clearStoredData} className="mt-4 rounded-full bg-[#d93838] px-4 py-2 text-sm font-semibold text-white">Clear stored data</button>

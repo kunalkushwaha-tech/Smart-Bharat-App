@@ -1,4 +1,5 @@
 import { emergencyContacts } from "../lib/emergencyContacts";
+import Link from "next/link";
 
 export default function OfflinePage() {
   return (
@@ -14,7 +15,7 @@ export default function OfflinePage() {
             </a>
           ))}
         </div>
-        <a href="/" className="mt-5 inline-block text-sm text-[#FF9933] underline">Try the cached emergency dashboard</a>
+        <Link href="/" className="mt-5 inline-block text-sm text-[#FF9933] underline">Try the cached emergency dashboard</Link>
       </div>
     </main>
   );

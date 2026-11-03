@@ -51,7 +51,7 @@ function shareReportOnWhatsApp(report: ScamReport) {
 }
 
 export default function CommunityScamAlerts() {
-  const configured = useMemo(isConfigured, []);
+  const configured = useMemo(() => isConfigured(), []);
   const [reports, setReports] = useState<ScamReport[]>([]);
   const [contactInfo, setContactInfo] = useState("");
   const [scamType, setScamType] = useState(scamTypes[0]);
@@ -107,8 +107,11 @@ export default function CommunityScamAlerts() {
 
   useEffect(() => {
     mountedRef.current = true;
-    void loadReports();
+    const loadTimer = window.setTimeout(() => {
+      void loadReports();
+    }, 0);
     return () => {
+      window.clearTimeout(loadTimer);
       mountedRef.current = false;
       reportRequestRef.current?.abort();
       reportRequestRef.current = null;
@@ -167,7 +170,7 @@ export default function CommunityScamAlerts() {
 
   if (!configured) {
     return (
-      <section className="mt-6 rounded-xl border border-white/10 bg-[#122A4D] p-4">
+      <section className="mt-6 rounded-xl border border-white/10 bg-[#122A4D] p-4 text-[#ECF2FA]">
         <h3 className="text-xl font-bold">Community Scam Alerts</h3>
         <p className="mt-2 text-sm opacity-80">This feature is not configured yet. Add the Supabase values from <code>.env.local.example</code> to enable shared scam reports.</p>
       </section>
@@ -175,16 +178,17 @@ export default function CommunityScamAlerts() {
   }
 
   return (
-    <section className="mt-6 rounded-xl border border-white/10 bg-[#122A4D] p-4">
+    <section className="mt-6 rounded-xl border border-white/10 bg-[#122A4D] p-4 text-[#ECF2FA]">
       <h3 className="text-xl font-bold">Community Scam Alerts</h3>
       <p className="mt-1 text-sm opacity-80">Share anonymous warnings and check recent reports from the community.</p>
       <form onSubmit={submitReport} className="mt-4 grid gap-3">
         <input value={contactInfo} onChange={(event) => setContactInfo(event.target.value)} placeholder="Phone number or suspicious link" className="rounded border border-white/15 bg-[#050B14] p-2" />
-        <select value={scamType} onChange={(event) => setScamType(event.target.value)} className="rounded border border-white/15 bg-[#050B14] p-2">
+        <label htmlFor="community-scam-type" className="sr-only">Scam type</label>
+        <select id="community-scam-type" value={scamType} onChange={(event) => setScamType(event.target.value)} className="rounded border border-white/15 bg-[#050B14] p-2">
           {scamTypes.map((type) => <option key={type}>{type}</option>)}
         </select>
         <textarea value={description} onChange={(event) => setDescription(event.target.value)} maxLength={500} rows={3} placeholder="Short description (optional)" className="rounded border border-white/15 bg-[#050B14] p-2" />
-        <button type="submit" disabled={submitting} className="w-fit rounded-full bg-[#FF9933] px-4 py-2 text-sm font-semibold">{submitting ? "Submitting..." : "Report a Scam"}</button>
+        <button type="submit" disabled={submitting} className="w-fit rounded-full bg-[#8f4700] px-4 py-2 text-sm font-semibold">{submitting ? "Submitting..." : "Report a Scam"}</button>
       </form>
       {message && <p className="mt-3 text-sm text-[#C8D5EA]">{message}</p>}
       <div className="mt-5 border-t border-white/10 pt-4">
