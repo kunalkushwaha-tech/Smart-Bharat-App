@@ -1,6 +1,6 @@
 const VERSION = "bharat-app-v4";
 const CACHE_NAME = `${VERSION}-app`;
-const APP_SHELL = ["/", "/~offline", "/manifest.json"];
+const APP_SHELL = ["/", "/share", "/~offline", "/manifest.json"];
 const isDevelopment = self.location.hostname === "localhost"
   || self.location.hostname === "127.0.0.1"
   || self.location.hostname === "[::1]";

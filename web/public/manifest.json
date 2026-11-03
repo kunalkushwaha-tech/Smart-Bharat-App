@@ -3,6 +3,15 @@
   "short_name": "Bharat",
   "start_url": "/",
   "display": "standalone",
+  "share_target": {
+    "action": "/share",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
   "background_color": "#0A1424",
   "theme_color": "#0B1F3A",
   "icons": [

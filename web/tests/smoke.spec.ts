@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import fs from "node:fs/promises";
 
-const routes = ["/", "/security-tools", "/privacy", "/terms", "/about"];
+const routes = ["/", "/security-tools", "/privacy", "/terms", "/about", "/share"];
 
 test("public routes load without browser errors", async ({ page }) => {
   const browserErrors: string[] = [];
@@ -27,6 +27,17 @@ test("home smoke checks and accessibility report", async ({ page }) => {
   expect(await page.locator('select').filter({ hasText: "All States & UTs" }).count()).toBe(1);
   expect(await page.locator('a[href^="tel:"]').count()).toBeGreaterThanOrEqual(11);
   expect(await page.locator('#emergency a[href^="tel:"]').evaluateAll((links) => links.every((link) => link.getAttribute("href")?.startsWith("tel:")))).toBe(true);
+  await expect(page.getByRole("heading", { name: "Spot the Scam Simulator" })).toBeVisible();
+  await page.getByRole("button", { name: "Start simulation" }).click();
+  await expect(page.getByText("Scenario 1 of 10")).toBeVisible();
+  await page.getByRole("button", { name: "Scam", exact: true }).click();
+  await expect(page.getByText("SIMULATION")).toBeVisible();
+
+  const shareResponse = await page.goto("/share?text=Urgent%20OTP%20request", { waitUntil: "domcontentloaded" });
+  expect(shareResponse?.status()).toBe(200);
+  await expect(page.getByText("Urgent OTP request")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Open Message Analyzer" })).toHaveAttribute("href", /security-tools\?message=/);
+  await page.goto("/", { waitUntil: "domcontentloaded" });
 
   await page.getByRole("button", { name: "Start Quiz" }).click();
   for (let question = 1; question <= 10; question += 1) {

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 const redFlags = [
   { keyword: 'urgent', label: 'Urgency create karta hai' },
@@ -19,6 +19,13 @@ const PhishingAnalyzer = () => {
   const [text, setText] = useState('');
   const [found, setFound] = useState<string[]>([]);
   const [checked, setChecked] = useState(false);
+
+  useEffect(() => {
+    const sharedMessage = new URLSearchParams(window.location.search).get("message");
+    if (!sharedMessage) return;
+    const timer = window.setTimeout(() => setText(sharedMessage.slice(0, 2000)), 0);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const handleAnalyze = () => {
     const lower = text.toLowerCase();

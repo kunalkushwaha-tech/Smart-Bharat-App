@@ -11,6 +11,7 @@ import CommunityScamAlerts from "./components/CommunityScamAlerts";
 import EmergencyErrorBoundary from "./components/EmergencyErrorBoundary";
 import IceCard from "./components/IceCard";
 import PrivacyTrustBadge from "./components/PrivacyTrustBadge";
+import ReadAloudButton from "./components/ReadAloudButton";
 import { Bot, FileText, GraduationCap, HeartPulse, Wrench } from "lucide-react";
 import { emergencyContacts } from "./lib/emergencyContacts";
 import { quizQuestions, shuffleQuiz, type QuizQuestion } from "./lib/quizData";
@@ -431,6 +432,7 @@ const NearbyServicesMap = dynamic(() => import("./components/NearbyServicesMap")
 const DynamicCertificate = dynamic(() => import("./components/CyberAwarenessCertificate"), { ssr: false });
 const DynamicFloatingAIChat = dynamic(() => import("./components/FloatingAIChat"), { ssr: false });
 const DynamicSpeechInput = dynamic(() => import("./components/SpeechInput"), { ssr: false });
+const DynamicSpotTheScamSimulator = dynamic(() => import("./components/SpotTheScamSimulator"), { ssr: false });
 
 const departmentKeywordMap: Record<string, string[]> = {
   "Public Health & Sanitation": ["gutter", "drain", "garbage", "smell", "dirty", "sewage"],
@@ -1418,7 +1420,10 @@ Apply: ${scheme.applyUrl}`,
                           : "bg-[#F4F7FC] text-[#111E30]"
                     }`}
                   >
-                    {message.text}
+                    <div className="flex items-start gap-2">
+                      <span>{message.text}</span>
+                      {message.role === "bot" ? <ReadAloudButton text={message.text} language={language} /> : null}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -1761,6 +1766,7 @@ Apply: ${scheme.applyUrl}`,
           }`}
         >
           <h2 className="mb-4 text-2xl font-bold">{text.academy}</h2>
+          <DynamicSpotTheScamSimulator />
           <CommunityScamAlerts />
           <details className="mt-6 rounded-xl border border-[#FF9933]/25 p-4">
             <summary className="cursor-pointer font-bold text-[#FF9933]">Show topic guides</summary>
@@ -1899,7 +1905,7 @@ Apply: ${scheme.applyUrl}`,
   <p className="text-sm">© 2026 Bharat App</p>
   <div className="mt-4 flex justify-center"><PrivacyTrustBadge /></div>
 </footer>
-     <DynamicFloatingAIChat />
+     <DynamicFloatingAIChat language={language} />
      <MobileBottomNav activeTab={activeTab} onNavigate={scrollToSection} isDark={isDark} />
     </div>
   );

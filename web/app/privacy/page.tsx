@@ -36,7 +36,7 @@ export default function PrivacyPage() {
           </section>
           <section className="rounded-xl border border-[#0B1F3A]/10 bg-white p-5">
             <h2 className="text-xl font-bold">Which APIs are used</h2>
-            <p className="mt-2 text-sm">Depending on the tool, the app may use OpenStreetMap/Overpass for nearby services, Google Safe Browsing for URL checks, Have I Been Pwned (HIBP) for breach checks, and browser Web Share, SMS, and geolocation APIs.</p>
+            <p className="mt-2 text-sm">Depending on the tool, the app may use OpenStreetMap/Overpass for nearby services, Google Safe Browsing for URL checks, Have I Been Pwned (HIBP) for breach checks, and browser Web Share, SMS, and geolocation APIs. Shared content is processed in your browser and sent to scanning APIs only when you press Scan.</p>
           </section>
           <section className="rounded-xl border border-[#0B1F3A]/10 bg-white p-5">
             <h2 className="text-xl font-bold">Error monitoring</h2>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { runUrlSafetyScan, type UrlScanSummary } from './urlSafety';
 import { updateCyberHygieneResults } from './cyberHygieneStorage';
 import ToolFeedback from './ToolFeedback';
@@ -16,6 +16,13 @@ export default function URLScanner() {
   const [upi, setUpi] = useState('');
   const [upiResult, setUpiResult] = useState<string | null>(null);
   const [deepScanning, setDeepScanning] = useState(false);
+
+  useEffect(() => {
+    const sharedUrl = new URLSearchParams(window.location.search).get("url");
+    if (!sharedUrl) return;
+    const timer = window.setTimeout(() => setUrl(sharedUrl.slice(0, 2048)), 0);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   async function scan(requestDeepScan = false) {
     setError(null);

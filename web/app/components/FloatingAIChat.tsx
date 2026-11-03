@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import { requestAIChat } from "../lib/aiChat";
+import ReadAloudButton from "./ReadAloudButton";
 
 type ChatMessage = {
   role: "user" | "bot";
   text: string;
 };
 
-export default function FloatingAIChat() {
+export default function FloatingAIChat({ language = "en" }: { language?: "en" | "hi" | "mr" }) {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -76,7 +77,10 @@ export default function FloatingAIChat() {
                     : "bg-[#122A4D] text-[#ECF2FA]"
                 }`}
               >
-                {message.text}
+                <div className="flex items-start gap-2">
+                  <span>{message.text}</span>
+                  {message.role === "bot" ? <ReadAloudButton text={message.text} language={language} /> : null}
+                </div>
               </div>
             ))}
             {loading ? <p className="text-xs text-[#C8D5EA]">Thinking...</p> : null}
