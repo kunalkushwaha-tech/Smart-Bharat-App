@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Terms of Use - Bharat App",
-  description: "Terms of use for Bharat App civic services and cyber safety tools.",
+  description: "Terms for using Bharat App's civic services and cyber-safety tools.",
   alternates: { canonical: "/terms" },
 };
 

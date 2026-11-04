@@ -90,16 +90,19 @@ function formatDistance(distance: number): string {
 }
 
 export default function NearbyServicesMap({ isDark }: NearbyServicesMapProps) {
-  const { location, isFallback } = useGeolocationFallback();
+  const { location, isFallback, requestLocation } = useGeolocationFallback();
   const [points, setPoints] = useState<NearbyPoint[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [tileError, setTileError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
   const center: LatLngTuple = location ? [location.lat, location.lng] : DEFAULT_CENTER;
+  const searchLocation = location ?? { lat: DEFAULT_CENTER[0], lng: DEFAULT_CENTER[1], timestamp: 0 };
 
   useEffect(() => {
-    if (!location) return;
     const controller = new AbortController();
-    const query = `[out:json][timeout:15];(nwr["amenity"="police"](around:5000,${location.lat},${location.lng});nwr["amenity"="hospital"](around:5000,${location.lat},${location.lng}););out center tags;`;
+    const [lat, lng] = center;
+    const query = `[out:json][timeout:15];(nwr["amenity"="police"](around:5000,${lat},${lng});nwr["amenity"="hospital"](around:5000,${lat},${lng}););out center tags;`;
     queueMicrotask(() => {
       setIsLoading(true);
       setFetchError(null);
@@ -125,10 +128,10 @@ export default function NearbyServicesMap({ isDark }: NearbyServicesMapProps) {
       .finally(() => setIsLoading(false));
 
     return () => controller.abort();
-  }, [location]);
+  }, [center[0], center[1], retryKey]);
 
-  const police = useNearbyFinder(location, "police", points);
-  const hospitals = useNearbyFinder(location, "hospital", points);
+  const police = useNearbyFinder(searchLocation, "police", points);
+  const hospitals = useNearbyFinder(searchLocation, "hospital", points);
   const nearbyServices = useMemo(() => [...police, ...hospitals].sort((a, b) => a.distance - b.distance), [hospitals, police]);
 
   return (
@@ -140,8 +143,9 @@ export default function NearbyServicesMap({ isDark }: NearbyServicesMapProps) {
         </div>
         {isFallback ? <span className="rounded-full bg-amber-500/15 px-2 py-1 text-xs font-semibold text-amber-700">Using last known location</span> : null}
       </div>
+      <button type="button" onClick={requestLocation} className="mb-3 min-h-11 rounded-full border border-[#2563eb] px-4 py-2 text-sm font-semibold">Use my location</button>
       {isLoading ? <p className="mb-3 text-sm opacity-80">Loading nearby police stations and hospitals...</p> : null}
-      {fetchError ? <p className="mb-3 text-sm text-[#b42318]">{fetchError}</p> : null}
+      {fetchError || tileError ? <div className="mb-3 text-sm text-[#b42318]"><p>{fetchError || "Map tiles could not be loaded."}</p><div className="mt-2 flex flex-wrap gap-3"><button type="button" onClick={() => { setFetchError(null); setTileError(false); setPoints([]); setRetryKey((value) => value + 1); }} className="min-h-11 rounded-full border border-[#b42318] px-4 py-2 font-semibold">Retry</button><a className="inline-flex min-h-11 items-center rounded-full border border-[#2563eb] px-4 py-2 font-semibold text-[#2563eb] underline" target="_blank" rel="noopener noreferrer" href={`https://www.openstreetmap.org/?mlat=${center[0]}&mlon=${center[1]}#map=14/${center[0]}/${center[1]}`}>Open OpenStreetMap</a></div></div> : null}
       {!isLoading && !fetchError && location && nearbyServices.length === 0 ? <p className="mb-3 text-sm opacity-80">No police stations or hospitals found within 5 km.</p> : null}
       {!location ? <p className="mb-3 text-sm opacity-80">Allow location access to find nearby services.</p> : null}
 
@@ -160,7 +164,7 @@ export default function NearbyServicesMap({ isDark }: NearbyServicesMapProps) {
       <div className="h-[320px] w-full overflow-hidden rounded-lg border border-white/15">
         <MapContainer key={`${center[0]}-${center[1]}`} center={center} zoom={13} scrollWheelZoom className="h-full w-full" style={{ height: "100%", width: "100%" }}>
           <MapResizeHandler triggerKey={`${center[0]}-${center[1]}`} />
-          <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          <TileLayer eventHandlers={{ tileerror: () => setTileError(true) }} attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           {location ? <Marker position={[location.lat, location.lng]} icon={iconByType.user}><Popup>Your current location</Popup></Marker> : null}
           {nearbyServices.map((service) => (
             <Marker key={`${service.category}-${service.lat}-${service.lng}`} position={[service.lat, service.lng]} icon={iconByType[service.category]}>

@@ -28,6 +28,7 @@ export type UseGeolocationFallbackResult = {
   isOffline: boolean;
   error: GeolocationPositionError | null;
   pendingAlertCount: number;
+  requestLocation: () => void;
   triggerPanicAlert: (alert?: Omit<PanicAlert, "location" | "timestamp">) => void;
 };
 
@@ -119,20 +120,20 @@ export function useGeolocationFallback(
       setPendingAlertCount(readQueuedAlerts().length);
     });
 
-    if (!navigator.geolocation) {
-      return () => {
-        window.removeEventListener("online", handleOnline);
-        window.removeEventListener("offline", handleOffline);
-      };
-    }
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, [flushQueuedAlerts, options.watchOptions]);
 
-    const watchId = navigator.geolocation.watchPosition(
+  const requestLocation = useCallback(() => {
+    if (!navigator.geolocation) {
+      setError({ code: 2, message: "Location is not supported.", PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3 } as GeolocationPositionError);
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
       (position) => {
-        const nextLocation: Location = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-          timestamp: position.timestamp,
-        };
+        const nextLocation = { lat: position.coords.latitude, lng: position.coords.longitude, timestamp: position.timestamp };
         window.localStorage.setItem(LOCATION_STORAGE_KEY, JSON.stringify(nextLocation));
         setLocation(nextLocation);
         setIsFallback(false);
@@ -148,13 +149,7 @@ export function useGeolocationFallback(
       },
       options.watchOptions,
     );
-
-    return () => {
-      navigator.geolocation.clearWatch(watchId);
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
-    };
-  }, [flushQueuedAlerts, options.watchOptions]);
+  }, [options.watchOptions]);
 
   const triggerPanicAlert = useCallback(
     (alert: Omit<PanicAlert, "location" | "timestamp"> = {}) => {
@@ -178,5 +173,5 @@ export function useGeolocationFallback(
     [location],
   );
 
-  return { location, isFallback, isOffline, error, pendingAlertCount, triggerPanicAlert };
+  return { location, isFallback, isOffline, error, pendingAlertCount, requestLocation, triggerPanicAlert };
 }

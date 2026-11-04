@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { clearFraudEvidenceVault } from "../lib/fraudEvidenceVault";
 
 const storageKeys = [
   "theme",
@@ -12,7 +13,11 @@ const storageKeys = [
 export default function PrivacyPage() {
   const clearStoredData = () => {
     storageKeys.forEach((key) => window.localStorage.removeItem(key));
-    window.alert("Stored Bharat App data has been cleared from this browser.");
+    void clearFraudEvidenceVault().then(() => {
+      window.alert("Stored Bharat App data has been cleared from this browser.");
+    }).catch(() => {
+      window.alert("Local preferences were cleared, but the evidence vault could not be removed.");
+    });
   };
 
   return (
@@ -32,11 +37,15 @@ export default function PrivacyPage() {
           </section>
           <section className="rounded-xl border border-[#0B1F3A]/10 bg-white p-5">
             <h2 className="text-xl font-bold">Data storage practices</h2>
-            <p className="mt-2 text-sm">Preferences, emergency contacts, the last known location, and offline alert queues are stored locally in your browser&apos;s localStorage. No personal data is stored for certificates; certificate IDs are verified by cryptographic signature, not from a database. The app does not provide a server account or central profile.</p>
+            <p className="mt-2 text-sm">Preferences, emergency contacts, the last known location, and offline alert queues are stored locally in your browser&apos;s localStorage. Fraud Evidence Vault cases and re-encoded evidence images are stored only in this browser&apos;s IndexedDB; they are never uploaded or sent to AI or other APIs. Lock-screen images are generated in the browser, downloaded directly, and not stored or uploaded by Bharat App. No personal data is stored for certificates; certificate IDs are verified by cryptographic signature, not from a database. The app does not provide a server account or central profile.</p>
           </section>
           <section className="rounded-xl border border-[#0B1F3A]/10 bg-white p-5">
             <h2 className="text-xl font-bold">Which APIs are used</h2>
             <p className="mt-2 text-sm">Depending on the tool, the app may use OpenStreetMap/Overpass for nearby services, Google Safe Browsing for URL checks, Have I Been Pwned (HIBP) for breach checks, and browser Web Share, SMS, and geolocation APIs. Shared content is processed in your browser and sent to scanning APIs only when you press Scan.</p>
+          </section>
+          <section className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-5">
+            <h2 className="text-xl font-bold">Fraud Evidence Vault</h2>
+            <p className="mt-2 text-sm">Vault records stay on your device and are not uploaded. Anyone using this browser can see them, so delete them after filing. The vault exports personal records for your use; the portal&apos;s own fields may differ.</p>
           </section>
           <section className="rounded-xl border border-[#0B1F3A]/10 bg-white p-5">
             <h2 className="text-xl font-bold">Error monitoring</h2>

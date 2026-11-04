@@ -16,7 +16,7 @@ import CyberHygieneScore from './components/CyberHygieneScore';
 import FakeSmsHeaderChecker from './components/FakeSmsHeaderChecker';
 export const metadata = {
   title: 'Security Tools & Audit - Smart Bharat',
-  description: 'Check passwords, URLs, breaches, phishing signals, and cyber hygiene with Bharat App tools.',
+  description: 'Use Bharat App tools to check passwords, URLs, breaches, phishing signals, and cyber hygiene.',
   alternates: { canonical: '/security-tools' },
 };
 

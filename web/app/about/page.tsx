@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "About Bharat App",
-  description: "Learn about Bharat App, a civic safety and cybersecurity platform for Indian citizens.",
+  description: "Learn about Bharat App's civic safety and cybersecurity tools for Indian citizens. Not affiliated with any government agency.",
   alternates: { canonical: "/about" },
 };
 

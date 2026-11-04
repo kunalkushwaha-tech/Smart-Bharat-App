@@ -61,3 +61,26 @@ test("home smoke checks and accessibility report", async ({ page }) => {
   await fs.mkdir("test-results", { recursive: true });
   await fs.writeFile("test-results/axe-report.json", JSON.stringify(axeReports, null, 2));
 });
+
+test("fraud evidence vault stores and exports a local case", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await page.getByText("Fraud Evidence Vault", { exact: true }).click();
+  await page.getByRole("button", { name: "Add case" }).click();
+  await page.getByLabel("What happened").fill("A suspicious UPI request arrived.");
+  await page.getByRole("button", { name: "Add timeline row" }).click();
+  await page.getByLabel("Timeline what happened").fill("Received suspicious request");
+  await page.getByLabel("Attach evidence images").setInputFiles({
+    name: "evidence.png",
+    mimeType: "image/png",
+    buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64"),
+  });
+  await expect(page.getByAltText("evidence.png")).toBeVisible();
+  const textDownload = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Download text summary (.txt)" }).click();
+  expect((await textDownload).suggestedFilename()).toBe("bharat-fraud-evidence-summary.txt");
+  const pdfDownload = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Download PDF summary" }).click();
+  expect((await pdfDownload).suggestedFilename()).toBe("bharat-fraud-evidence-summary.pdf");
+  page.once("dialog", (dialog) => void dialog.accept());
+  await page.getByRole("button", { name: "Delete everything" }).click();
+});

@@ -6,7 +6,11 @@ const isDevelopment = self.location.hostname === "localhost"
   || self.location.hostname === "[::1]";
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)));
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then((cache) => cache.addAll(APP_SHELL))
+      .then(() => precacheHomeChunks()),
+  );
   self.skipWaiting();
 });
 
@@ -62,5 +66,20 @@ async function cacheFirst(request) {
     return response;
   } catch {
     return new Response("", { status: 503, statusText: "Offline" });
+  }
+}
+
+async function precacheHomeChunks() {
+  try {
+    const response = await fetch("/");
+    if (!response.ok) return;
+    const html = await response.text();
+    const paths = [...html.matchAll(/(?:src|href)="(\/_next\/[^"]+\.js)"/g)].map((match) => match[1]);
+    if (paths.length > 0) {
+      const cache = await caches.open(CACHE_NAME);
+      await cache.addAll([...new Set(paths)]);
+    }
+  } catch {
+    // Static assets will still be cached as they are requested.
   }
 }

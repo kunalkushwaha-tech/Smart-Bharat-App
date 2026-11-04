@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useGeofencing, type GeofenceZone } from "../hooks/useGeofencing";
 import { useGeolocationFallback, type PanicAlert } from "../hooks/useGeolocationFallback";
@@ -44,6 +44,13 @@ export default function PanicMode() {
   const [contactNumber, setContactNumber] = useState("");
   const [editingContactIndex, setEditingContactIndex] = useState<number | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const [showSendLocation, setShowSendLocation] = useState(false);
+  const countdownTimerRef = useRef<number | null>(null);
+
+  useEffect(() => () => {
+    if (countdownTimerRef.current !== null) window.clearInterval(countdownTimerRef.current);
+  }, []);
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -83,7 +90,9 @@ export default function PanicMode() {
 
   const sendLocationToContacts = (sharedLocation: { lat: number; lng: number } | null = location) => {
     const link = locationLink(sharedLocation);
-    const message = `Emergency! I need help. My location: ${link}`;
+    const message = sharedLocation
+      ? `Emergency! I need help. My location: ${link} (${sharedLocation.lat}, ${sharedLocation.lng})`
+      : "Emergency! I need help. Location permission was unavailable, so no coordinates are included.";
 
     if (navigator.share) {
       void navigator.share({ title: "Emergency location", text: message }).catch(() => undefined);
@@ -91,7 +100,7 @@ export default function PanicMode() {
     contacts.forEach((contact) => {
       window.open(`sms:${encodeURIComponent(contact.number)}?body=${encodeURIComponent(message)}`, "_blank");
     });
-    if (contacts.length === 0 && !navigator.share) notify("Add an emergency contact to send your location.");
+    if (contacts.length === 0 && !navigator.share) notify("No contacts saved. Add a contact or use the Share sheet.");
   };
 
   const onFlushAlerts = async (alerts: PanicAlert[]) => {
@@ -101,7 +110,7 @@ export default function PanicMode() {
     if (alerts.length > 0) notify(`${alerts.length} offline panic alert(s) sent.`);
   };
 
-  const { location, isFallback, isOffline, triggerPanicAlert } = useGeolocationFallback({
+  const { location, isFallback, isOffline, requestLocation, triggerPanicAlert } = useGeolocationFallback({
     onFlushAlerts,
   });
 
@@ -116,9 +125,27 @@ export default function PanicMode() {
   );
 
   const triggerPanic = () => {
-    triggerPanicAlert({ source: "panic-button" });
-    sendLocationToContacts();
-    window.location.href = "tel:112";
+    if (countdown !== null) return;
+    requestLocation();
+    setCountdown(3);
+    countdownTimerRef.current = window.setInterval(() => {
+      setCountdown((current) => {
+        if (current === null || current <= 1) {
+          if (countdownTimerRef.current !== null) window.clearInterval(countdownTimerRef.current);
+          triggerPanicAlert({ source: "panic-button" });
+          window.location.href = "tel:112";
+          window.setTimeout(() => setShowSendLocation(true), 500);
+          return null;
+        }
+        return current - 1;
+      });
+    }, 1000);
+  };
+
+  const cancelPanic = () => {
+    if (countdownTimerRef.current !== null) window.clearInterval(countdownTimerRef.current);
+    countdownTimerRef.current = null;
+    setCountdown(null);
   };
 
   return (
@@ -133,14 +160,16 @@ export default function PanicMode() {
           ) : null}
           {mounted && isOffline && !isFallback ? <p className="mt-1 text-xs opacity-75">Offline — location will sync when online.</p> : null}
         </div>
-        <button
+        {countdown !== null ? <button type="button" onClick={cancelPanic} className="min-h-11 rounded-full border border-red-700 px-6 py-3 font-extrabold">Cancel ({countdown})</button> : <button
           type="button"
           onClick={triggerPanic}
           className="rounded-full bg-[#b91c1c] px-6 py-3 font-extrabold text-white shadow-lg shadow-red-600/30"
         >
           PANIC — CALL 112
-        </button>
+        </button>}
       </div>
+      {showSendLocation ? <button type="button" onClick={() => sendLocationToContacts()} className="mt-4 min-h-11 w-full rounded-lg bg-[#0B1F3A] px-4 py-3 font-bold text-white">Send my location to contacts</button> : null}
+      {showSendLocation && !location ? <p className="mt-2 text-sm">Location permission was denied or unavailable; the message will be sent without coordinates.</p> : null}
 
       {activeZoneLabel ? <p className="mt-3 text-xs">Active zone: {activeZoneLabel}</p> : null}
       {toast ? <p role="status" className="mt-3 rounded-lg bg-[#0B1F3A] px-3 py-2 text-sm text-white">{toast}</p> : null}

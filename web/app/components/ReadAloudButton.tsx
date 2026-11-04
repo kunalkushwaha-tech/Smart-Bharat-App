@@ -25,10 +25,12 @@ export default function ReadAloudButton({ text, language = "en" }: { text: strin
       return;
     }
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = languageCode;
+    const hasDevanagari = /[\u0900-\u097F]/.test(text);
+    utterance.lang = hasDevanagari ? (language === "mr" ? "mr-IN" : "hi-IN") : "en-IN";
     utterance.onend = () => setSpeaking(false);
     utterance.onerror = () => setSpeaking(false);
-    const voice = synthesis.getVoices().find((candidate) => candidate.lang.toLowerCase().startsWith(languageCode.slice(0, 2)));
+    const preferredLanguage = utterance.lang;
+    const voice = synthesis.getVoices().find((candidate) => candidate.lang.toLowerCase().startsWith(preferredLanguage.slice(0, 2)));
     if (voice) utterance.voice = voice;
     setSpeaking(true);
     synthesis.speak(utterance);

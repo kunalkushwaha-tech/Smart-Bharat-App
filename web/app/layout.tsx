@@ -3,7 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import RegisterServiceWorker from "./components/RegisterServiceWorker";
 
-const siteDescription = "Sovereign AI civic services, cyber safety, complaints, and awareness dashboard.";
+const siteDescription = "Free cyber-safety tools, emergency helplines, a government scheme finder and fraud-awareness quiz for Indian citizens. Not affiliated with any government agency.";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,14 +22,14 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   openGraph: {
     title: "Bharat App - Civic & Cyber Dashboard",
-    description: "One Platform for Cyber Safety & Citizen Services",
+    description: siteDescription,
     type: "website",
     images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Bharat App - Cyber Safety and Citizen Services" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Bharat App - Civic & Cyber Dashboard",
-    description: "One Platform for Cyber Safety & Citizen Services",
+    description: siteDescription,
     images: ["/og-image.png"],
   },
   alternates: { canonical: "/" },

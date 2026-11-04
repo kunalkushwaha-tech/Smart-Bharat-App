@@ -11,6 +11,7 @@ import CommunityScamAlerts from "./components/CommunityScamAlerts";
 import EmergencyErrorBoundary from "./components/EmergencyErrorBoundary";
 import IceCard from "./components/IceCard";
 import PrivacyTrustBadge from "./components/PrivacyTrustBadge";
+import OfflineBadge from "./components/OfflineBadge";
 import ReadAloudButton from "./components/ReadAloudButton";
 import { Bot, FileText, GraduationCap, HeartPulse, Wrench } from "lucide-react";
 import { emergencyContacts } from "./lib/emergencyContacts";
@@ -136,6 +137,18 @@ const indianStates = [
   "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu",
   "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal",
 ];
+const SCHEME_DETAILS_KEY = "bharat-app-scheme-details";
+const schemeCategories = ["All Categories", "Farmer", "Student", "Worker", "Health", "Housing", "Women", "Senior citizen"];
+function schemeCategoryFor(name: string) {
+  if (name.includes("KISAN")) return "Farmer";
+  if (name.includes("Scholarship")) return "Student";
+  if (name.includes("MGNREGA") || name.includes("Stand-Up")) return "Worker";
+  if (name.includes("Ayushman")) return "Health";
+  if (name.includes("Awas")) return "Housing";
+  if (name.includes("Sukanya")) return "Women";
+  if (name.includes("Pension")) return "Senior citizen";
+  return "All Categories";
+}
 
 const schemeCards: Scheme[] = [
   {
@@ -433,6 +446,7 @@ const DynamicCertificate = dynamic(() => import("./components/CyberAwarenessCert
 const DynamicFloatingAIChat = dynamic(() => import("./components/FloatingAIChat"), { ssr: false });
 const DynamicSpeechInput = dynamic(() => import("./components/SpeechInput"), { ssr: false });
 const DynamicSpotTheScamSimulator = dynamic(() => import("./components/SpotTheScamSimulator"), { ssr: false });
+const DynamicFraudEvidenceVault = dynamic(() => import("./components/FraudEvidenceVault"), { ssr: false });
 
 const departmentKeywordMap: Record<string, string[]> = {
   "Public Health & Sanitation": ["gutter", "drain", "garbage", "smell", "dirty", "sewage"],
@@ -562,6 +576,7 @@ function QuizResults({
 }
 
 export default function Home() {
+  const contactEmail = process.env.NEXT_PUBLIC_CONTACT_EMAIL?.trim();
   const [theme, setTheme] = useState<Theme>("dark");
   const [themeInitialized, setThemeInitialized] = useState(false);
   const isDark = theme === "dark";
@@ -597,6 +612,8 @@ export default function Home() {
   const [schemeAge, setSchemeAge] = useState("");
   const [schemeState, setSchemeState] = useState("");
   const [schemeIncome, setSchemeIncome] = useState("");
+  const [schemeCategory, setSchemeCategory] = useState("All Categories");
+  const [rememberSchemeDetails, setRememberSchemeDetails] = useState(false);
   const [selectedSchemeName, setSelectedSchemeName] = useState<string | null>(null);
   const [matchingSchemeNames, setMatchingSchemeNames] = useState<string[] | null>(null);
   const [schemeEvaluation, setSchemeEvaluation] = useState("");
@@ -622,6 +639,33 @@ export default function Home() {
       setThemeInitialized(true);
     }, 0);
   }, []);
+
+  useEffect(() => {
+    const saved = localStorage.getItem(SCHEME_DETAILS_KEY);
+    if (!saved) return;
+    try {
+      const details = JSON.parse(saved) as { age?: string; income?: string; state?: string; category?: string };
+      window.setTimeout(() => {
+        setSchemeAge(details.age ?? "");
+        setSchemeIncome(details.income ?? "");
+        setSchemeState(details.state ?? "");
+        setSchemeCategory(details.category ?? "All Categories");
+        setRememberSchemeDetails(true);
+      }, 0);
+    } catch {
+      localStorage.removeItem(SCHEME_DETAILS_KEY);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!rememberSchemeDetails) return;
+    localStorage.setItem(SCHEME_DETAILS_KEY, JSON.stringify({
+      age: schemeAge,
+      income: schemeIncome,
+      state: schemeState,
+      category: schemeCategory,
+    }));
+  }, [rememberSchemeDetails, schemeAge, schemeIncome, schemeState, schemeCategory]);
 
   useEffect(() => {
     document.documentElement.lang = language;
@@ -720,11 +764,14 @@ export default function Home() {
     const stateFiltered = schemeCards.filter((scheme) =>
       scheme.central || !scheme.relevantStates || !schemeState || scheme.relevantStates.includes(schemeState),
     );
+    const categoryFiltered = stateFiltered.filter((scheme) =>
+      schemeCategory === "All Categories" || schemeCategoryFor(scheme.name) === schemeCategory,
+    );
     if (!matchingSchemeNames) {
-      return stateFiltered;
+      return categoryFiltered;
     }
-    return stateFiltered.filter((scheme) => matchingSchemeNames.includes(scheme.name));
-  }, [matchingSchemeNames, schemeState]);
+    return categoryFiltered.filter((scheme) => matchingSchemeNames.includes(scheme.name));
+  }, [matchingSchemeNames, schemeCategory, schemeState]);
 
   const scrollToSection = (tab: TabId) => {
     const section = document.getElementById(tab);
@@ -1020,7 +1067,9 @@ Apply: ${scheme.applyUrl}`,
 
     const matched = schemeCards.filter((scheme) => {
       const appliesToState = scheme.central || !scheme.relevantStates || !schemeState || scheme.relevantStates.includes(schemeState);
+      const appliesToCategory = schemeCategory === "All Categories" || schemeCategoryFor(scheme.name) === schemeCategory;
       return appliesToState
+        && appliesToCategory
         && (age === null || age >= scheme.minAge)
         && (age === null || scheme.maxAge === undefined || age <= scheme.maxAge)
         && (income === null || scheme.maxIncome === null || income <= scheme.maxIncome);
@@ -1097,7 +1146,8 @@ Apply: ${scheme.applyUrl}`,
     if (!("speechSynthesis" in window)) return;
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(translatedScamWarnings[language].join(". "));
-    const languageCode = language === "hi" ? "hi-IN" : language === "mr" ? "mr-IN" : "en-IN";
+    const warningText = translatedScamWarnings[language].join(". ");
+    const languageCode = /[\u0900-\u097F]/.test(warningText) ? (language === "mr" ? "mr-IN" : "hi-IN") : "en-IN";
     utterance.lang = languageCode;
     const voice = window.speechSynthesis.getVoices().find((candidate) => candidate.lang.toLowerCase().startsWith(languageCode.slice(0, 2)));
     if (voice) utterance.voice = voice;
@@ -1246,7 +1296,7 @@ Apply: ${scheme.applyUrl}`,
         >
           <div className="scam-ticker-track flex min-w-max gap-10 whitespace-nowrap px-3 text-sm font-semibold">
             {[...translatedScamWarnings[language], ...translatedScamWarnings[language]].map((warning, index) => (
-              <span key={`${language}-${index}`}>{warning}</span>
+              <span key={`${language}-${index}`} aria-hidden={index >= translatedScamWarnings[language].length}>{warning}</span>
             ))}
           </div>
           <div className="scam-ticker-static px-3 text-sm font-semibold">
@@ -1485,7 +1535,37 @@ Apply: ${scheme.applyUrl}`,
                     <option key={state} value={state}>{state}</option>
                   ))}
                 </select>
+                <select
+                  value={schemeCategory}
+                  onChange={(event) => {
+                    setSchemeCategory(event.target.value);
+                    setMatchingSchemeNames(null);
+                    setSelectedSchemeName(null);
+                  }}
+                  aria-label="Scheme category"
+                  className={`rounded-lg border px-3 py-2 ${
+                    isDark ? "border-white/20 bg-[#050B14] text-[#ECF2FA]" : "border-[#0B1F3A]/20 bg-white text-[#111E30]"
+                  }`}
+                >
+                  {schemeCategories.map((category) => <option key={category}>{category}</option>)}
+                </select>
               </div>
+              <label className="mt-3 flex min-h-11 items-center gap-2 text-sm">
+                <input type="checkbox" checked={rememberSchemeDetails} onChange={(event) => {
+                  const checked = event.target.checked;
+                  setRememberSchemeDetails(checked);
+                  if (!checked) localStorage.removeItem(SCHEME_DETAILS_KEY);
+                }} />
+                Remember my details on this device
+              </label>
+              {rememberSchemeDetails ? <button type="button" onClick={() => {
+                localStorage.removeItem(SCHEME_DETAILS_KEY);
+                setSchemeAge("");
+                setSchemeIncome("");
+                setSchemeState("");
+                setSchemeCategory("All Categories");
+                setRememberSchemeDetails(false);
+              }} className="mt-2 min-h-11 rounded-full border px-4 py-2 text-sm font-semibold">Clear saved details</button> : null}
               <button
                 type="button"
                 onClick={runSchemeEligibility}
@@ -1577,6 +1657,7 @@ Apply: ${scheme.applyUrl}`,
               Open official portal
             </a>
           </div>
+          <DynamicFraudEvidenceVault />
           <label htmlFor="complaint-input" className="mb-2 block text-sm font-semibold">
             Describe your complaint
           </label>
@@ -1858,7 +1939,7 @@ Apply: ${scheme.applyUrl}`,
           )}
         </section>
 
-        <section
+        {contactEmail ? <section
           id="contact"
           className={`rounded-2xl border p-6 ${
             isDark ? "border-white/10 bg-[#0A1424]" : "border-[#0B1F3A]/10 bg-white"
@@ -1866,10 +1947,10 @@ Apply: ${scheme.applyUrl}`,
         >
           <h2 className="mb-2 text-2xl font-bold">{copy.contact}</h2>
           <p className="mb-4 text-sm opacity-85">{copy.contactText}</p>
-          <a href="mailto:support@bharatapp.example" className="inline-flex rounded-full bg-[#FF9933] px-5 py-2 font-semibold text-white">
+          <a href={`mailto:${contactEmail}`} className="inline-flex min-h-11 items-center rounded-full bg-[#FF9933] px-5 py-2 font-semibold text-white">
             {copy.emailUs}
           </a>
-        </section>
+        </section> : null}
       </main>
       <div className="pointer-events-none fixed inset-x-0 bottom-20 z-40 flex flex-col items-end gap-2 px-4 md:bottom-6 md:px-6">
         {!panicModeVisible ? (
@@ -1896,7 +1977,7 @@ Apply: ${scheme.applyUrl}`,
     <a href="/privacy" className="hover:text-white">Privacy Policy</a>
     <a href="/terms" className="hover:text-white">Terms</a>
     <a href="https://github.com/kunalkushwaha-tech" target="_blank" className="hover:text-white">GitHub</a>
-    <a href="#contact" className="hover:text-white">Contact</a>
+    {contactEmail ? <a href="#contact" className="hover:text-white">Contact</a> : null}
   </div>
   <p className="mx-auto max-w-3xl text-xs leading-relaxed text-[#cbd5e1]">
     Bharat App is an independent, open-access awareness platform and is not officially affiliated with any government agency.
@@ -1904,6 +1985,7 @@ Apply: ${scheme.applyUrl}`,
   </p>
   <p className="text-sm">© 2026 Bharat App</p>
   <div className="mt-4 flex justify-center"><PrivacyTrustBadge /></div>
+  <div className="mt-4 flex justify-center"><OfflineBadge /></div>
 </footer>
      <DynamicFloatingAIChat language={language} />
      <MobileBottomNav activeTab={activeTab} onNavigate={scrollToSection} isDark={isDark} />

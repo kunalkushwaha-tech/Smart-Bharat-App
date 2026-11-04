@@ -60,6 +60,14 @@ async function decryptIceData(value: string) {
 export default function IceCard() {
   const [data, setData] = useState<IceData>(initialData);
   const [qrCode, setQrCode] = useState("");
+  const [imageFields, setImageFields] = useState({
+    bloodGroup: true,
+    allergies: true,
+    contactName: true,
+    contactNumber: true,
+    conditions: false,
+  });
+  const [imageSize, setImageSize] = useState<"1080x2400" | "1170x2532">("1080x2400");
 
   useEffect(() => {
     const restoreCard = async () => {
@@ -88,6 +96,54 @@ export default function IceCard() {
     setQrCode(await QRCode.toDataURL(cardText, { width: 240, margin: 2 }));
   }
 
+  function downloadLockScreen() {
+    const [width, height] = imageSize.split("x").map(Number);
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext("2d");
+    if (!context) return;
+    context.fillStyle = "#071426";
+    context.fillRect(0, 0, width, height);
+    context.fillStyle = "#ffffff";
+    context.textAlign = "center";
+    context.font = `700 ${Math.round(width * 0.045)}px system-ui, sans-serif`;
+    context.fillText("IN CASE OF EMERGENCY", width / 2, height * 0.42);
+    const lines = [
+      imageFields.bloodGroup && data.bloodGroup ? `Blood group: ${data.bloodGroup}` : "",
+      imageFields.allergies && data.allergies ? `Allergies: ${data.allergies}` : "",
+      imageFields.conditions && data.conditions ? `Medical conditions: ${data.conditions}` : "",
+      imageFields.contactName && data.contactName ? `Contact: ${data.contactName}` : "",
+      imageFields.contactNumber && data.contactNumber ? data.contactNumber : "",
+    ].filter(Boolean);
+    context.textAlign = "left";
+    context.font = `600 ${Math.round(width * 0.032)}px system-ui, sans-serif`;
+    const maxWidth = width * 0.82;
+    let y = height * 0.5;
+    lines.forEach((line) => {
+      const words = line.split(/\s+/);
+      let current = "";
+      words.forEach((word) => {
+        const next = current ? `${current} ${word}` : word;
+        if (context.measureText(next).width > maxWidth && current) {
+          context.fillText(current, width * 0.09, y);
+          y += width * 0.045;
+          current = word;
+        } else {
+          current = next;
+        }
+      });
+      if (current) {
+        context.fillText(current, width * 0.09, y);
+        y += width * 0.055;
+      }
+    });
+    const link = document.createElement("a");
+    link.download = `ice-lock-screen-${imageSize}.png`;
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  }
+
   return (
     <div className="mt-6 rounded-xl border border-white/10 bg-[#122A4D] p-4">
       <h3 className="text-xl font-bold">ICE Card</h3>
@@ -108,6 +164,31 @@ export default function IceCard() {
       </div>
       <button type="button" onClick={() => void saveCard()} className="mt-4 rounded-full bg-[#FF9933] px-4 py-2 text-sm font-semibold">Save & Generate QR</button>
       {qrCode && <div className="mt-4 rounded bg-white p-3 sm:w-fit"><img src={qrCode} alt="QR code containing your ICE Card information" width={240} height={240} /></div>}
+      <div className="mt-5 rounded-lg border border-amber-300/40 bg-amber-500/10 p-4 text-sm">
+        <p className="font-semibold">Anyone who sees your lock screen can read this. Include only what you want a stranger or paramedic to see. Also set up your phone&apos;s built-in Emergency Info / Medical ID.</p>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          {([
+            ["bloodGroup", "Blood group"],
+            ["allergies", "Allergies"],
+            ["contactName", "Emergency contact name"],
+            ["contactNumber", "Contact number"],
+            ["conditions", "Medical conditions"],
+          ] as const).map(([field, label]) => (
+            <label key={field} className="flex min-h-11 items-center gap-2">
+              <input type="checkbox" checked={imageFields[field]} onChange={(event) => setImageFields((current) => ({ ...current, [field]: event.target.checked }))} />
+              {label}
+            </label>
+          ))}
+        </div>
+        <label className="mt-3 block">Image size
+          <select value={imageSize} onChange={(event) => setImageSize(event.target.value as typeof imageSize)} className="ml-2 min-h-11 rounded border bg-[#050B14] px-2">
+            <option value="1080x2400">1080 × 2400</option>
+            <option value="1170x2532">1170 × 2532</option>
+          </select>
+        </label>
+        <button type="button" onClick={downloadLockScreen} className="mt-4 min-h-11 rounded-full bg-[#FF9933] px-4 py-2 font-semibold">Download lock-screen image</button>
+        <ol className="mt-3 list-decimal space-y-1 pl-5 text-xs"><li>Open your phone&apos;s Photos or Gallery app.</li><li>Choose the downloaded image and select Set as wallpaper.</li><li>Choose the lock screen and confirm.</li></ol>
+      </div>
     </div>
   );
 }
