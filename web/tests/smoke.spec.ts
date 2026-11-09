@@ -74,6 +74,7 @@ test("fraud evidence vault stores and exports a local case", async ({ page }) =>
     mimeType: "image/png",
     buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64"),
   });
+
   await expect(page.getByAltText("evidence.png")).toBeVisible();
   const textDownload = page.waitForEvent("download");
   await page.getByRole("button", { name: "Download text summary (.txt)" }).click();
@@ -83,4 +84,15 @@ test("fraud evidence vault stores and exports a local case", async ({ page }) =>
   expect((await pdfDownload).suggestedFilename()).toBe("bharat-fraud-evidence-summary.pdf");
   page.once("dialog", (dialog) => void dialog.accept());
   await page.getByRole("button", { name: "Delete everything" }).click();
+});
+
+test("quick link check and security metadata surfaces render", async ({ page }) => {
+  await page.goto("/", { waitUntil: "networkidle" });
+  await expect(page.getByLabel("Check a link")).toBeVisible();
+  await page.goto("/security-tools", { waitUntil: "domcontentloaded" });
+  await expect(page.getByText("Technical details")).toBeVisible();
+  await expect(page.locator("body")).not.toContainText("SHA-256:");
+  await expect(page.locator("body")).not.toContainText("SHA-1 (HIBP):");
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://www.smartbharat.me/security-tools");
+  await expect(page.locator('meta[property="og:title"]')).toHaveAttribute("content", "Security Tools & Audit - Bharat App");
 });

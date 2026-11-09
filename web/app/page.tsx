@@ -30,6 +30,8 @@ type Scheme = {
   detail: string;
   eligibility: string;
   applyUrl: string;
+  officialUrl: string;
+  lastVerified: string;
   central?: boolean;
   relevantStates?: string[];
 };
@@ -142,7 +144,7 @@ const schemeCategories = ["All Categories", "Farmer", "Student", "Worker", "Heal
 function schemeCategoryFor(name: string) {
   if (name.includes("KISAN")) return "Farmer";
   if (name.includes("Scholarship")) return "Student";
-  if (name.includes("MGNREGA") || name.includes("Stand-Up")) return "Worker";
+  if (name.includes("MGNREGA") || name.includes("NREGA") || name.includes("Stand-Up")) return "Worker";
   if (name.includes("Ayushman")) return "Health";
   if (name.includes("Awas")) return "Housing";
   if (name.includes("Sukanya")) return "Women";
@@ -158,6 +160,8 @@ const schemeCards: Scheme[] = [
     detail: "Farmers can receive up to ₹6,000 per year in three instalments, paid directly into their bank account.",
     eligibility: "Age 18+; eligible landholding farmer families, subject to scheme exclusions.",
     applyUrl: "https://pmkisan.gov.in",
+    officialUrl: "https://pmkisan.gov.in",
+    lastVerified: "2026-11-09",
     central: true,
   },
   {
@@ -167,15 +171,19 @@ const schemeCards: Scheme[] = [
     detail: "Financial help for eligible students from some communities to continue their studies after school.",
     eligibility: "Age and income limits vary by community/category; this finder uses the commonly published ₹2.5 lakh annual family-income ceiling.",
     applyUrl: "https://scholarships.gov.in",
+    officialUrl: "https://scholarships.gov.in",
+    lastVerified: "2026-11-09",
     central: true,
   },
   {
-    name: "MGNREGA",
+    name: "VB-G RAM G (earlier MGNREGA)",
     minAge: 18,
     maxIncome: 150000,
-    detail: "Rural households can get up to 100 days of paid work in a year. Ask your Gram Panchayat to apply.",
-    eligibility: "Age 18+; adult members of rural households willing to do unskilled manual work.",
-    applyUrl: "https://nrega.nic.in",
+    detail: "Gaon ke rural household ke adults agar unskilled manual work karna chahte hain, to rozgar guarantee ke liye Gram Panchayat se sampark karein. Is card mein MGNREGA aur NREGA search keywords ke roop mein bhi kaam karte hain.",
+    eligibility: "Adults volunteering for unskilled manual work in rural households; current rules aur application status official Ministry page par confirm karein.",
+    applyUrl: "https://rural.gov.in",
+    officialUrl: "https://rural.gov.in",
+    lastVerified: "2026-11-09",
     central: true,
   },
   {
@@ -185,6 +193,8 @@ const schemeCards: Scheme[] = [
     detail: "Eligible poor and vulnerable families get cashless hospital treatment cover of up to ₹5 lakh per family per year. All citizens aged 70+ are also covered without an income limit.",
     eligibility: "No fixed age or income ceiling for SECC-identified families; all citizens aged 70+ are eligible regardless of income.",
     applyUrl: "https://beneficiary.nha.gov.in",
+    officialUrl: "https://beneficiary.nha.gov.in",
+    lastVerified: "2026-11-09",
     central: true,
   },
   {
@@ -194,6 +204,8 @@ const schemeCards: Scheme[] = [
     detail: "Eligible families without a pucca house can get housing support. Urban income bands run from EWS up to ₹3 lakh, LIG up to ₹6 lakh, and MIG up to ₹18 lakh; rural eligibility is based on housing deprivation.",
     eligibility: "Usually an adult household applicant who does not own a pucca house; urban annual household income up to ₹18 lakh, with rural eligibility based on housing deprivation.",
     applyUrl: "https://pmaymis.gov.in",
+    officialUrl: "https://pmaymis.gov.in",
+    lastVerified: "2026-11-09",
     central: true,
   },
   {
@@ -204,6 +216,8 @@ const schemeCards: Scheme[] = [
     detail: "A parent or guardian can open a savings account for a girl child below age 10. Deposits earn government-notified interest, receive tax benefits, and the account matures after 21 years.",
     eligibility: "Girl child must be below 10 when the account opens; normally up to two accounts per family. No income limit.",
     applyUrl: "https://www.indiapost.gov.in",
+    officialUrl: "https://www.indiapost.gov.in",
+    lastVerified: "2026-11-09",
     central: true,
   },
   {
@@ -213,6 +227,8 @@ const schemeCards: Scheme[] = [
     detail: "Women aged 18+ in eligible deprived or poor households can receive an LPG connection with government assistance for the connection and initial setup.",
     eligibility: "Woman aged 18+ from an eligible poor/deprived household with no existing LPG connection in the household; no single universal income ceiling.",
     applyUrl: "https://www.pmuy.gov.in",
+    officialUrl: "https://www.pmuy.gov.in",
+    lastVerified: "2026-11-09",
     central: true,
   },
   {
@@ -223,6 +239,8 @@ const schemeCards: Scheme[] = [
     detail: "Indian citizens can build a retirement corpus through voluntary contributions. NPS offers retirement savings and tax benefits; returns depend on market-linked investments.",
     eligibility: "Indian citizen or eligible resident aged 18–70; no income limit and contributions are voluntary.",
     applyUrl: "https://enps.nsdl.com",
+    officialUrl: "https://enps.nsdl.com",
+    lastVerified: "2026-11-09",
     central: true,
   },
   {
@@ -232,6 +250,8 @@ const schemeCards: Scheme[] = [
     detail: "Banks can provide loans of ₹10 lakh to ₹1 crore to SC/ST or women entrepreneurs for a new Greenfield business in manufacturing, services, trading, or allied agriculture.",
     eligibility: "SC/ST or woman entrepreneur aged 18+; for a new Greenfield enterprise. No income limit, but bank credit assessment applies.",
     applyUrl: "https://www.standupmitra.in",
+    officialUrl: "https://www.standupmitra.in",
+    lastVerified: "2026-11-09",
     central: true,
   },
 ];
@@ -446,6 +466,7 @@ const DynamicCertificate = dynamic(() => import("./components/CyberAwarenessCert
 const DynamicFloatingAIChat = dynamic(() => import("./components/FloatingAIChat"), { ssr: false });
 const DynamicSpeechInput = dynamic(() => import("./components/SpeechInput"), { ssr: false });
 const DynamicSpotTheScamSimulator = dynamic(() => import("./components/SpotTheScamSimulator"), { ssr: false });
+const DynamicQuickLinkCheck = dynamic(() => import("./components/QuickLinkCheck"), { ssr: false });
 const DynamicFraudEvidenceVault = dynamic(() => import("./components/FraudEvidenceVault"), { ssr: false });
 
 const departmentKeywordMap: Record<string, string[]> = {
@@ -613,6 +634,7 @@ export default function Home() {
   const [schemeState, setSchemeState] = useState("");
   const [schemeIncome, setSchemeIncome] = useState("");
   const [schemeCategory, setSchemeCategory] = useState("All Categories");
+  const [quickLinkReady, setQuickLinkReady] = useState(false);
   const [rememberSchemeDetails, setRememberSchemeDetails] = useState(false);
   const [selectedSchemeName, setSelectedSchemeName] = useState<string | null>(null);
   const [matchingSchemeNames, setMatchingSchemeNames] = useState<string[] | null>(null);
@@ -627,6 +649,11 @@ export default function Home() {
   const [quizCompletedAnswers, setQuizCompletedAnswers] = useState<Record<string, string>>({});
   const [quizBestScore, setQuizBestScore] = useState<number | null>(null);
   const [quizStarted, setQuizStarted] = useState(false);
+
+  useEffect(() => {
+    const idleId = window.setTimeout(() => setQuickLinkReady(true), 1);
+    return () => window.clearTimeout(idleId);
+  }, []);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
@@ -1288,6 +1315,7 @@ Apply: ${scheme.applyUrl}`,
             </a>
           ))}
         </div>
+        {quickLinkReady ? <DynamicQuickLinkCheck /> : null}
         <section
           aria-label={text.tickerLabel}
           className={`scam-ticker relative flex min-h-14 items-center overflow-hidden rounded-xl border ${
@@ -1594,6 +1622,7 @@ Apply: ${scheme.applyUrl}`,
                   >
                     <p className="font-bold">{scheme.name}</p>
                     <p className="text-sm opacity-85">{scheme.detail}</p>
+                    <p className="mt-1 text-xs opacity-70">Last verified: {scheme.lastVerified}. Rules and amounts can change. Confirm on the official site before applying.</p>
                     <p className="mt-1 text-xs opacity-75">
                       Criteria: {scheme.eligibility}
                     </p>
@@ -1605,6 +1634,9 @@ Apply: ${scheme.applyUrl}`,
                       className="mt-2 inline-flex text-xs font-semibold text-[#FF9933] underline"
                     >
                       Apply Officially: {scheme.applyUrl.replace("https://", "")}
+                    </a>
+                    <a href={scheme.officialUrl} target="_blank" rel="noopener noreferrer" className="ml-3 mt-2 inline-flex text-xs font-semibold text-[#007c91] underline">
+                      Official source
                     </a>
                   </div>
                 ))}

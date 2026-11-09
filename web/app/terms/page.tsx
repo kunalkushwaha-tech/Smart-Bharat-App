@@ -3,6 +3,11 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Terms of Use - Bharat App",
   description: "Terms for using Bharat App's civic services and cyber-safety tools.",
+  openGraph: {
+    title: "Terms of Use - Bharat App",
+    description: "Terms for using Bharat App's civic services and cyber-safety tools.",
+    url: "/terms",
+  },
   alternates: { canonical: "/terms" },
 };
 

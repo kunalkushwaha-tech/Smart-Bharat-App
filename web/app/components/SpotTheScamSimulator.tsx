@@ -93,7 +93,7 @@ export default function SpotTheScamSimulator() {
   }
 
   if (choice !== null && index >= round.length - 1) {
-    const shareText = `I scored ${score}/10 in Smart Bharat's Spot the Scam Simulator. Practice safer online habits at https://www.smartbharat.me`;
+    const shareText = `I scored ${score}/10 in Bharat App's Spot the Scam Simulator. Practice safer online habits at https://www.smartbharat.me`;
     return (
       <div className="mt-6 rounded-xl border border-[#FF9933]/30 bg-[#122A4D] p-5 text-[#ECF2FA]">
         <span className="rounded-full bg-red-700 px-3 py-1 text-xs font-bold tracking-wide text-white">SIMULATION COMPLETE</span>

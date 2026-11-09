@@ -76,6 +76,32 @@ function stripHtml(value: string) {
   return value.replace(/<[^>]*>/g, "").replace(/[\u0000-\u001F\u007F]/g, "").trim().slice(0, 500);
 }
 
+function isLuhnNumber(value: string) {
+  const digits = value.replace(/\D/g, "");
+  if (digits.length < 13 || digits.length > 19) return false;
+  let sum = 0;
+  let doubleDigit = false;
+  for (let index = digits.length - 1; index >= 0; index -= 1) {
+    let digit = Number(digits[index]);
+    if (doubleDigit) {
+      digit *= 2;
+      if (digit > 9) digit -= 9;
+    }
+    sum += digit;
+    doubleDigit = !doubleDigit;
+  }
+  return sum % 10 === 0;
+}
+
+function containsSensitiveSubmission(value: string, description = false) {
+  const compact = value.replace(/[\s-]/g, "");
+  return /\b\d{12}\b/.test(compact)
+    || /\b[A-Z]{5}\d{4}[A-Z]\b/i.test(value)
+    || isLuhnNumber(value)
+    || /@[a-z0-9.-]+\.[a-z]{2,}/i.test(value)
+    || (description && /(?<!\d)\d{4,8}(?!\d)/.test(value));
+}
+
 function normalizeValue(value: string) {
   const cleaned = stripHtml(value).toLowerCase();
   if (/^\+?[0-9\s().-]+$/.test(cleaned)) return cleaned.replace(/\D/g, "");
@@ -194,8 +220,9 @@ export async function POST(request: Request) {
 
     if (!contactInfo || contactInfo.length > 200 || !isValidContact(contactInfo)
       || !allowedScamTypes.has(scamType)
-      || description === undefined || (description && description.length > 500)) {
-      return withCors(NextResponse.json({ error: "Invalid report details" }, { status: 400 }), request);
+      || description === undefined || (description && description.length > 500)
+      || containsSensitiveSubmission(contactInfo) || (description && containsSensitiveSubmission(description, true))) {
+      return withCors(NextResponse.json({ error: "Please remove personal or payment details before submitting this public report." }, { status: 400 }), request);
     }
 
     let { error } = await withSupabaseTimeout(client.from("scam_reports").insert({

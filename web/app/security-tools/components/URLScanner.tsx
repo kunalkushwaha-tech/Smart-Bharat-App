@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { runUrlSafetyScan, type UrlScanSummary } from './urlSafety';
+import { useUrlSafetyScan } from './useUrlSafetyScan';
 import { updateCyberHygieneResults } from './cyberHygieneStorage';
 import ToolFeedback from './ToolFeedback';
 import RecentChecks from './RecentChecks';
@@ -10,9 +10,7 @@ import PrivacyTrustBadge from '../../components/PrivacyTrustBadge';
 
 export default function URLScanner() {
   const [url, setUrl] = useState('');
-  const [result, setResult] = useState<UrlScanSummary | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { result, loading, error, scan, setError } = useUrlSafetyScan();
   const [upi, setUpi] = useState('');
   const [upiResult, setUpiResult] = useState<string | null>(null);
   const [deepScanning, setDeepScanning] = useState(false);
@@ -24,19 +22,15 @@ export default function URLScanner() {
     return () => window.clearTimeout(timer);
   }, []);
 
-  async function scan(requestDeepScan = false) {
-    setError(null);
-    setResult(null);
+  async function scanUrl(requestDeepScan = false) {
     const u = url.trim();
     if (!u) {
       setError('Enter a URL');
       return;
     }
 
-    setLoading(true);
-    try {
-      const summary = await runUrlSafetyScan(u, requestDeepScan);
-      setResult(summary);
+    const summary = await scan(u, requestDeepScan);
+    if (summary) {
       const safeBrowsing = summary.safeBrowsing as { matches?: unknown[] } | null;
       updateCyberHygieneResults({
         url: {
@@ -46,18 +40,13 @@ export default function URLScanner() {
         },
       });
       addToolHistory('url', { summary: summary.heuristics.length ? `${summary.heuristics.length} heuristic flag(s)` : 'No heuristic flags', detail: summary.parsedUrl });
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      setError(message);
-    } finally {
-      setLoading(false);
-      setDeepScanning(false);
     }
+    setDeepScanning(false);
   }
 
   function deepScan() {
     setDeepScanning(true);
-    void scan(true);
+    void scanUrl(true);
   }
 
   function verifyUPI() {
@@ -83,7 +72,7 @@ export default function URLScanner() {
           onChange={(e) => setUrl(e.target.value)}
           placeholder="https://example.com"
         />
-        <button className="rounded bg-sky-600 px-4 py-2 text-white" onClick={() => void scan()} disabled={loading}>
+        <button className="rounded bg-sky-600 px-4 py-2 text-white" onClick={() => void scanUrl()} disabled={loading}>
           {loading ? 'Scanning...' : 'Scan'}
         </button>
       </div>

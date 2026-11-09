@@ -4,6 +4,11 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "About Bharat App",
   description: "Learn about Bharat App's civic safety and cybersecurity tools for Indian citizens. Not affiliated with any government agency.",
+  openGraph: {
+    title: "About Bharat App",
+    description: "Learn about Bharat App's civic safety and cybersecurity tools for Indian citizens. Not affiliated with any government agency.",
+    url: "/about",
+  },
   alternates: { canonical: "/about" },
 };
 

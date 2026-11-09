@@ -15,8 +15,13 @@ import SocialMediaPrivacyGuide from '../components/SocialMediaPrivacyGuide';
 import CyberHygieneScore from './components/CyberHygieneScore';
 import FakeSmsHeaderChecker from './components/FakeSmsHeaderChecker';
 export const metadata = {
-  title: 'Security Tools & Audit - Smart Bharat',
+  title: 'Security Tools & Audit - Bharat App',
   description: 'Use Bharat App tools to check passwords, URLs, breaches, phishing signals, and cyber hygiene.',
+  openGraph: {
+    title: 'Security Tools & Audit - Bharat App',
+    description: 'Use Bharat App tools to check passwords, URLs, breaches, phishing signals, and cyber hygiene.',
+    url: '/security-tools',
+  },
   alternates: { canonical: '/security-tools' },
 };
 

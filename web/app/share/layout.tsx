@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Shared Content - Smart Bharat",
+  title: "Shared Content - Bharat App",
   description: "Review shared content safely before scanning it.",
   robots: { index: false, follow: false },
 };

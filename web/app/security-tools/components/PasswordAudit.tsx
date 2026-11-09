@@ -41,7 +41,6 @@ function estimateEntropyBits(password: string) {
 
 export default function PasswordAudit() {
   const [password, setPassword] = useState('');
-  const [sha256, setSha256] = useState<string | null>(null);
   const [sha1, setSha1] = useState<string | null>(null);
   const [entropy, setEntropy] = useState<number>(0);
   const [pwnedCount, setPwnedCount] = useState<number | null>(null);
@@ -65,16 +64,14 @@ export default function PasswordAudit() {
 
   async function analyze(pw: string) {
     setError(null);
-    setSha256(null);
     setSha1(null);
     setPwnedCount(null);
     setEntropy(estimateEntropyBits(pw));
     if (!pw) return;
     setLoading(true);
     try {
-      const s256 = await sha256Hex(pw);
+      await sha256Hex(pw);
       const s1 = await sha1HexUpper(pw);
-      setSha256(s256);
       setSha1(s1);
 
       // HIBP k-anonymity range query: first 5 chars of SHA-1 (uppercase)
@@ -251,12 +248,11 @@ export default function PasswordAudit() {
         <div>
           Estimated entropy: <strong>{entropy}</strong> bits
         </div>
-        <div>
-          SHA-256: <code className="break-words">{sha256 ?? '—'}</code>
-        </div>
-        <div>
-          SHA-1 (HIBP): <code className="break-words">{sha1 ?? '—'}</code>
-        </div>
+        <details className="rounded-lg border border-white/10 p-3">
+          <summary className="cursor-pointer font-semibold">Technical details</summary>
+          <p className="mt-2 text-sm">Only the first 5 characters of a SHA-1 prefix are used for the k-anonymity breach check.</p>
+          <code className="mt-2 block text-xs">{sha1 ? sha1.slice(0, 5) : '—'}</code>
+        </details>
         <div>
           HIBP breach count: {' '}
           {loading ? <span>checking...</span> : pwnedCount === null ? <span>—</span> : (

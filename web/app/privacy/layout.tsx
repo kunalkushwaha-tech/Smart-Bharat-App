@@ -3,6 +3,11 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Privacy & Safety - Bharat App",
   description: "Read how Bharat App handles browser data, certificate IDs, shared content, and security-tool checks.",
+  openGraph: {
+    title: "Privacy & Safety - Bharat App",
+    description: "Read how Bharat App handles browser data, certificate IDs, shared content, and security-tool checks.",
+    url: "/privacy",
+  },
   alternates: { canonical: "/privacy" },
 };
 

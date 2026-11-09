@@ -170,7 +170,7 @@ export default function CommunityScamAlerts() {
   return (
     <section className="mt-6 rounded-xl border border-white/10 bg-[#122A4D] p-4 text-[#ECF2FA]">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div><h3 className="text-xl font-bold">Community Scam Alerts</h3><p className="mt-1 text-sm opacity-80">Community reports are not verified by Bharat App.</p></div>
+        <div><h3 className="text-xl font-bold">Community Scam Alerts</h3><p className="mt-1 text-sm opacity-80">Community reports are not verified by Bharat App.</p><p className="mt-2 text-xs opacity-80">Reports are public and stored on a server. Don&apos;t include your name, your own phone number, Aadhaar/PAN, bank or card details, or OTPs.</p></div>
         <button type="button" onClick={() => setRetryCount((value) => value + 1)} className="min-h-11 rounded-full border border-white/20 px-4 py-2 text-sm font-semibold">Refresh</button>
       </div>
       {lastUpdated ? <p className="mt-2 text-xs opacity-70">Last updated: {formatDate(lastUpdated)}</p> : null}
