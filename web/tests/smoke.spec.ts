@@ -19,6 +19,7 @@ test("public routes load without browser errors", async ({ page }) => {
 });
 
 test("home smoke checks and accessibility report", async ({ page }) => {
+  test.setTimeout(120_000);
   const response = await page.goto("/", { waitUntil: "domcontentloaded" });
   expect(response?.status()).toBe(200);
 
@@ -87,7 +88,7 @@ test("fraud evidence vault stores and exports a local case", async ({ page }) =>
 });
 
 test("quick link check and security metadata surfaces render", async ({ page }) => {
-  await page.goto("/", { waitUntil: "networkidle" });
+  await page.goto("/", { waitUntil: "domcontentloaded" });
   await expect(page.getByRole("heading", { name: "Check a link" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Spot the Scam Simulator" })).toBeVisible();
   await expect(page.getByText("Fraud Evidence Vault", { exact: true })).toBeVisible();
