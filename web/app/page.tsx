@@ -31,7 +31,7 @@ type Scheme = {
   eligibility: string;
   applyUrl: string;
   officialUrl: string;
-  lastVerified: string;
+  lastReviewed?: string;
   central?: boolean;
   relevantStates?: string[];
 };
@@ -161,7 +161,6 @@ const schemeCards: Scheme[] = [
     eligibility: "Age 18+; eligible landholding farmer families, subject to scheme exclusions.",
     applyUrl: "https://pmkisan.gov.in",
     officialUrl: "https://pmkisan.gov.in",
-    lastVerified: "2026-11-09",
     central: true,
   },
   {
@@ -172,18 +171,16 @@ const schemeCards: Scheme[] = [
     eligibility: "Age and income limits vary by community/category; this finder uses the commonly published ₹2.5 lakh annual family-income ceiling.",
     applyUrl: "https://scholarships.gov.in",
     officialUrl: "https://scholarships.gov.in",
-    lastVerified: "2026-11-09",
     central: true,
   },
   {
     name: "VB-G RAM G (earlier MGNREGA)",
     minAge: 18,
     maxIncome: 150000,
-    detail: "Gaon ke rural household ke adults agar unskilled manual work karna chahte hain, to rozgar guarantee ke liye Gram Panchayat se sampark karein. Is card mein MGNREGA aur NREGA search keywords ke roop mein bhi kaam karte hain.",
+    detail: "Gaon ke rural household ke adults agar unskilled manual work karna chahte hain, to har saal per rural household up to 125 days ki guaranteed wage employment ke liye Gram Panchayat se sampark karein. Is card mein MGNREGA aur NREGA search keywords ke roop mein bhi kaam karte hain.",
     eligibility: "Adults volunteering for unskilled manual work in rural households; current rules aur application status official Ministry page par confirm karein.",
     applyUrl: "https://rural.gov.in",
     officialUrl: "https://rural.gov.in",
-    lastVerified: "2026-11-09",
     central: true,
   },
   {
@@ -194,18 +191,16 @@ const schemeCards: Scheme[] = [
     eligibility: "No fixed age or income ceiling for SECC-identified families; all citizens aged 70+ are eligible regardless of income.",
     applyUrl: "https://beneficiary.nha.gov.in",
     officialUrl: "https://beneficiary.nha.gov.in",
-    lastVerified: "2026-11-09",
     central: true,
   },
   {
     name: "PM Awas Yojana",
     minAge: 18,
-    maxIncome: 1800000,
-    detail: "Eligible families without a pucca house can get housing support. Urban income bands run from EWS up to ₹3 lakh, LIG up to ₹6 lakh, and MIG up to ₹18 lakh; rural eligibility is based on housing deprivation.",
-    eligibility: "Usually an adult household applicant who does not own a pucca house; urban annual household income up to ₹18 lakh, with rural eligibility based on housing deprivation.",
+    maxIncome: 900000,
+    detail: "PMAY-U 2.0 mein eligible urban families ko housing support mil sakta hai. Annual household income bands: EWS up to ₹3 lakh, LIG ₹3–6 lakh, aur MIG ₹6–9 lakh. Interest subsidy lending institution ke through milti hai. Rural eligibility alag housing-deprivation rules par based hai.",
+    eligibility: "Urban household income: EWS up to ₹3 lakh, LIG ₹3–6 lakh, MIG ₹6–9 lakh; rural eligibility housing deprivation ke basis par check hoti hai.",
     applyUrl: "https://pmaymis.gov.in",
     officialUrl: "https://pmaymis.gov.in",
-    lastVerified: "2026-11-09",
     central: true,
   },
   {
@@ -217,7 +212,6 @@ const schemeCards: Scheme[] = [
     eligibility: "Girl child must be below 10 when the account opens; normally up to two accounts per family. No income limit.",
     applyUrl: "https://www.indiapost.gov.in",
     officialUrl: "https://www.indiapost.gov.in",
-    lastVerified: "2026-11-09",
     central: true,
   },
   {
@@ -228,7 +222,6 @@ const schemeCards: Scheme[] = [
     eligibility: "Woman aged 18+ from an eligible poor/deprived household with no existing LPG connection in the household; no single universal income ceiling.",
     applyUrl: "https://www.pmuy.gov.in",
     officialUrl: "https://www.pmuy.gov.in",
-    lastVerified: "2026-11-09",
     central: true,
   },
   {
@@ -240,18 +233,16 @@ const schemeCards: Scheme[] = [
     eligibility: "Indian citizen or eligible resident aged 18–70; no income limit and contributions are voluntary.",
     applyUrl: "https://enps.nsdl.com",
     officialUrl: "https://enps.nsdl.com",
-    lastVerified: "2026-11-09",
     central: true,
   },
   {
     name: "Stand-Up India",
     minAge: 18,
     maxIncome: null,
-    detail: "Banks can provide loans of ₹10 lakh to ₹1 crore to SC/ST or women entrepreneurs for a new Greenfield business in manufacturing, services, trading, or allied agriculture.",
-    eligibility: "SC/ST or woman entrepreneur aged 18+; for a new Greenfield enterprise. No income limit, but bank credit assessment applies.",
+    detail: "Stand-Up India eligible entrepreneurs ko new business ke liye bank finance guidance aur support deta hai. Eligibility, loan terms aur application availability official portal par check karein.",
+    eligibility: "SC/ST ya woman entrepreneur ke liye new Greenfield enterprise ki scheme; current rules aur applications official site par confirm karein.",
     applyUrl: "https://www.standupmitra.in",
     officialUrl: "https://www.standupmitra.in",
-    lastVerified: "2026-11-09",
     central: true,
   },
 ];
@@ -1622,7 +1613,8 @@ Apply: ${scheme.applyUrl}`,
                   >
                     <p className="font-bold">{scheme.name}</p>
                     <p className="text-sm opacity-85">{scheme.detail}</p>
-                    <p className="mt-1 text-xs opacity-70">Last verified: {scheme.lastVerified}. Rules and amounts can change. Confirm on the official site before applying.</p>
+                    {scheme.lastReviewed ? <p className="mt-1 text-xs opacity-70">Last reviewed: {scheme.lastReviewed}</p> : null}
+                    <p className="mt-1 text-xs opacity-70">Rules and amounts can change. Confirm on the official site before applying.</p>
                     <p className="mt-1 text-xs opacity-75">
                       Criteria: {scheme.eligibility}
                     </p>

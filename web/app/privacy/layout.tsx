@@ -8,6 +8,11 @@ export const metadata: Metadata = {
     description: "Read how Bharat App handles browser data, certificate IDs, shared content, and security-tool checks.",
     url: "/privacy",
   },
+  twitter: {
+    card: "summary",
+    title: "Privacy & Safety - Bharat App",
+    description: "Read how Bharat App handles browser data, certificate IDs, shared content, and security-tool checks.",
+  },
   alternates: { canonical: "/privacy" },
 };
 

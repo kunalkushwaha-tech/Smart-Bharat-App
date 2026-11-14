@@ -88,11 +88,15 @@ test("fraud evidence vault stores and exports a local case", async ({ page }) =>
 
 test("quick link check and security metadata surfaces render", async ({ page }) => {
   await page.goto("/", { waitUntil: "networkidle" });
-  await expect(page.getByLabel("Check a link")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Check a link" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Spot the Scam Simulator" })).toBeVisible();
+  await expect(page.getByText("Fraud Evidence Vault", { exact: true })).toBeVisible();
   await page.goto("/security-tools", { waitUntil: "domcontentloaded" });
   await expect(page.getByText("Technical details")).toBeVisible();
   await expect(page.locator("body")).not.toContainText("SHA-256:");
   await expect(page.locator("body")).not.toContainText("SHA-1 (HIBP):");
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://www.smartbharat.me/security-tools");
   await expect(page.locator('meta[property="og:title"]')).toHaveAttribute("content", "Security Tools & Audit - Bharat App");
+  await page.goto("/share", { waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("heading", { name: "Shared with Bharat App" })).toBeVisible();
 });

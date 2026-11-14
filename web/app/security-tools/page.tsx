@@ -22,6 +22,11 @@ export const metadata = {
     description: 'Use Bharat App tools to check passwords, URLs, breaches, phishing signals, and cyber hygiene.',
     url: '/security-tools',
   },
+  twitter: {
+    card: 'summary',
+    title: 'Security Tools & Audit - Bharat App',
+    description: 'Use Bharat App tools to check passwords, URLs, breaches, phishing signals, and cyber hygiene.',
+  },
   alternates: { canonical: '/security-tools' },
 };
 
@@ -36,7 +41,7 @@ export default function SecurityToolsPage() {
 
       <section className="mb-8">
         <h2 className="text-2xl font-semibold mb-2">Password Auditor</h2>
-        <p className="mb-4 text-gray-600">Check password strength, SHA-256 fingerprint, and whether it appears in known breaches (HIBP k-Anonymity).</p>
+        <p className="mb-4 text-gray-600">Check password strength and whether it appears in known breaches (HIBP k-Anonymity).</p>
         <PasswordAudit />
       </section>
 <section className="mb-8">

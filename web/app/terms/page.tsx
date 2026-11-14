@@ -8,6 +8,11 @@ export const metadata: Metadata = {
     description: "Terms for using Bharat App's civic services and cyber-safety tools.",
     url: "/terms",
   },
+  twitter: {
+    card: "summary",
+    title: "Terms of Use - Bharat App",
+    description: "Terms for using Bharat App's civic services and cyber-safety tools.",
+  },
   alternates: { canonical: "/terms" },
 };
 
