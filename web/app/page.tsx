@@ -13,13 +13,25 @@ import IceCard from "./components/IceCard";
 import PrivacyTrustBadge from "./components/PrivacyTrustBadge";
 import OfflineBadge from "./components/OfflineBadge";
 import ReadAloudButton from "./components/ReadAloudButton";
-import { Bot, FileText, GraduationCap, HeartPulse, Wrench } from "lucide-react";
+import { Ambulance, Baby, Bot, CreditCard, Flame, FileText, GraduationCap, HeartHandshake, HeartPulse, ShoppingCart, Siren, Wrench } from "lucide-react";
 import { emergencyContacts } from "./lib/emergencyContacts";
 import { quizQuestions, shuffleQuiz, type QuizQuestion } from "./lib/quizData";
+import { translations as sharedTranslations, type Language } from "./lib/i18n/translations";
+import { translatedScamWarnings } from "./lib/scamWarnings";
+import Header from "./components/sections/Header";
+import Hero from "./components/sections/Hero";
+import HelplineStrip from "./components/sections/HelplineStrip";
+import ScamTicker from "./components/sections/ScamTicker";
+import EmergencySection from "./components/sections/EmergencySection";
+import AICompanionSection from "./components/sections/AICompanionSection";
+import SchemesSection from "./components/sections/SchemesSection";
+import ComplaintsSection from "./components/sections/ComplaintsSection";
+import SecurityToolsCard from "./components/sections/SecurityToolsCard";
+import AcademySection from "./components/sections/AcademySection";
+import Footer from "./components/sections/Footer";
 
 
 type Theme = "light" | "dark";
-type Language = "en" | "hi" | "mr";
 type TabId = "emergency" | "ai" | "complaints" | "security" | "academy";
 type ChatMessage = { role: "user" | "bot"; text: string };
 type Scheme = {
@@ -52,6 +64,16 @@ type ComplaintCategory = {
   description: string;
   guidance: string;
 };
+
+function emergencyIconFor(number: string) {
+  if (number === "112") return Siren;
+  if (number === "108") return Ambulance;
+  if (number === "101") return Flame;
+  if (number === "1930") return CreditCard;
+  if (number === "1098") return Baby;
+  if (number === "181") return HeartHandshake;
+  return ShoppingCart;
+}
 
 const legacyTranslations = {
   en: {
@@ -258,86 +280,6 @@ const indianStatesAndUnionTerritories = [
   "Dadra and Nagar Haveli and Daman and Diu", "Delhi", "Jammu and Kashmir", "Ladakh",
   "Lakshadweep", "Puducherry",
 ];
-
-const scamWarnings = [
-  "⚠️ FedEx Parcel Scam Alert",
-  "⚠️ Fake Electricity Bill SMS Fraud",
-  "⚠️ Part-Time Job Scam on WhatsApp",
-  "⚠️ KYC Update Phishing Calls",
-  "⚠️ Fake Loan App Harassment",
-  "⚠️ UPI Refund Request Fraud",
-];
-const translatedScamWarnings: Record<Language, string[]> = {
-  en: scamWarnings,
-  hi: ["⚠️ FedEx पार्सल घोटाला अलर्ट", "⚠️ नकली बिजली बिल SMS धोखाधड़ी", "⚠️ WhatsApp पर पार्ट-टाइम नौकरी घोटाला", "⚠️ KYC अपडेट फिशिंग कॉल", "⚠️ नकली लोन ऐप उत्पीड़न", "⚠️ UPI रिफंड अनुरोध धोखाधड़ी"],
-  mr: ["⚠️ FedEx पार्सल घोटाळा सूचना", "⚠️ बनावट वीज बिल SMS फसवणूक", "⚠️ WhatsApp वरील अर्धवेळ नोकरी घोटाळा", "⚠️ KYC अपडेट फिशिंग कॉल", "⚠️ बनावट कर्ज अॅपचा त्रास", "⚠️ UPI परतावा विनंती फसवणूक"],
-};
-
-const translations = {
-  en: {
-    language: "Language",
-    languageLabel: "Language",
-    tagline: "One Platform for Cyber Safety & Citizen Services",
-    emergency: "Emergency Services",
-    ai: "AI Companion & Schemes",
-    complaints: "Complaints & Grievances",
-    security: "Security Tools & Audit",
-    academy: "Cyber Awareness Academy",
-    schemeFinder: "Scheme Eligibility Finder",
-    state: "State",
-    allStates: "All States & UTs",
-    evaluate: "Evaluate All Matching Schemes",
-    tickerLabel: "Trending scam alerts",
-    age: "Age",
-    annualIncome: "Annual Income (₹)",
-    contact: "Contact",
-    contactText: "Questions or feedback? Reach out to the Bharat App team.",
-    emailUs: "Email Us",
-    eligibilityCount: (count: number) => `You may be eligible for ${count} scheme${count === 1 ? "" : "s"}`,
-  },
-  hi: {
-    language: "भाषा",
-    languageLabel: "भाषा",
-    tagline: "साइबर सुरक्षा और नागरिक सेवाओं का एक मंच",
-    emergency: "आपातकालीन सेवाएं",
-    ai: "एआई सहायक और योजनाएं",
-    complaints: "शिकायतें और जन-शिकायत",
-    security: "सुरक्षा उपकरण और ऑडिट",
-    academy: "साइबर जागरूकता अकादमी",
-    schemeFinder: "योजना पात्रता खोजक",
-    state: "राज्य",
-    allStates: "सभी राज्य और केंद्र शासित प्रदेश",
-    evaluate: "सभी मिलती योजनाएं जांचें",
-    tickerLabel: "लोकप्रिय ठगी अलर्ट",
-    age: "आयु",
-    annualIncome: "वार्षिक आय (₹)",
-    contact: "संपर्क",
-    contactText: "प्रश्न या सुझाव हैं? भारत ऐप टीम से संपर्क करें।",
-    emailUs: "ईमेल करें",
-    eligibilityCount: (count: number) => `आप ${count} योजना${count === 1 ? "" : "ओं"} के लिए पात्र हो सकते हैं`,
-  },
-  mr: {
-    language: "भाषा",
-    languageLabel: "भाषा",
-    tagline: "सायबर सुरक्षा आणि नागरिक सेवांसाठी एक व्यासपीठ",
-    emergency: "आपत्कालीन सेवा",
-    ai: "एआय सहाय्यक आणि योजना",
-    complaints: "तक्रारी आणि गाऱ्हाणी",
-    security: "सुरक्षा साधने आणि ऑडिट",
-    academy: "सायबर जागरूकता अकादमी",
-    schemeFinder: "योजना पात्रता शोधक",
-    state: "राज्य",
-    allStates: "सर्व राज्ये आणि केंद्रशासित प्रदेश",
-    evaluate: "सर्व जुळणाऱ्या योजना तपासा",
-    tickerLabel: "ट्रेंडिंग फसवणूक सूचना",
-    age: "वय",
-    annualIncome: "वार्षिक उत्पन्न (₹)",
-    contact: "संपर्क",
-    contactText: "प्रश्न किंवा सूचना आहेत? भारत अॅप टीमशी संपर्क साधा.",
-    emailUs: "ईमेल करा",
-    eligibilityCount: (count: number) => `तुम्ही ${count} योजनांसाठी पात्र असू शकता`,
-  },
-} as const;
 
 const translatedEmergencyLabels = {
   en: ["Unified Emergency Response", "Ambulance Emergency Services", "Fire Emergency Services", "Cybercrime Financial Fraud Helpline", "Child Helpline", "Women Safety Helpline", "National Consumer Helpline"],
@@ -593,11 +535,12 @@ export default function Home() {
   const [themeInitialized, setThemeInitialized] = useState(false);
   const isDark = theme === "dark";
   const [language, setLanguage] = useState<Language>("en");
-  const text = translations[language];
+  const text = sharedTranslations[language];
   const copy = text;
   const [highContrast, setHighContrast] = useState(false);
 
   const [activeTab, setActiveTab] = useState<TabId>("emergency");
+  const [aiChatOpen, setAiChatOpen] = useState(false);
   const [panicModeVisible, setPanicModeVisible] = useState(true);
   const [tickerPaused, setTickerPaused] = useState(false);
 
@@ -1175,15 +1118,16 @@ Apply: ${scheme.applyUrl}`,
   return (
     <div
       className={`${highContrast ? "high-contrast " : ""}theme-${isDark ? "dark" : "light"} min-h-screen transition-colors ${
-        isDark ? "bg-[#050B14] text-[#ECF2FA]" : "bg-[#F4F7FC] text-[#111E30]"
+        "bg-[var(--background)] text-[var(--foreground)]"
       }`}
     >
       <a href="#main-content" className="skip-link">Skip to main content</a>
       <div className="h-[6px] w-full bg-[linear-gradient(90deg,#FF9933_0%,#FF9933_33%,#fff_33%,#fff_66%,#128807_66%)]" aria-hidden="true" />
 
+      <Header>
       <header
         className={`relative z-50 border-b px-5 py-4 shadow-sm md:px-8 ${
-          isDark ? "border-white/10 bg-[#0A1424]" : "border-[#0B1F3A]/10 bg-white"
+          isDark ? "border-slate-800 bg-[#0F172A]" : "border-slate-300 bg-white"
         }`}
       >
         <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-4">
@@ -1229,7 +1173,7 @@ Apply: ${scheme.applyUrl}`,
       </header>
 
       <nav
-        className={`sticky top-0 z-40 border-b px-5 py-3 md:px-8 ${
+        className={`sticky top-0 z-40 border-b px-5 py-3 backdrop-blur md:px-8 ${
           isDark ? "border-white/10 bg-[#0A1424]/95" : "border-[#0B1F3A]/10 bg-white/95"
         }`}
       >
@@ -1291,9 +1235,12 @@ Apply: ${scheme.applyUrl}`,
           </a>
         </div>
       </nav>
+      </Header>
 
       <main id="main-content" className="site-container space-y-6 py-5 md:space-y-8 md:py-8">
-        <HeroSection onNavigate={scrollToSection} />
+        <Hero><HeroSection onNavigate={scrollToSection} /></Hero>
+        {quickLinkReady ? <DynamicQuickLinkCheck /> : null}
+        <HelplineStrip>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {emergencyContacts.filter((item) => ["112", "108", "101", "1930"].includes(item.number)).map((item) => (
             <a
@@ -1306,7 +1253,34 @@ Apply: ${scheme.applyUrl}`,
             </a>
           ))}
         </div>
-        {quickLinkReady ? <DynamicQuickLinkCheck /> : null}
+        <details className="mt-2 rounded-xl border border-slate-800 bg-[#0F172A] p-3">
+          <summary className="cursor-pointer text-sm font-semibold text-slate-200">More helplines</summary>
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            {emergencyContacts.filter((item) => ["1098", "181", "1915"].includes(item.number)).map((item) => (
+              <a key={`more-${item.number}`} href={`tel:${item.number}`} className="app-control flex min-h-11 flex-col items-center justify-center rounded-lg border border-slate-700 px-2 py-2 text-center text-xs font-semibold text-slate-100">
+                <span className="text-base font-extrabold">{item.number}</span>
+                <span>{item.title}</span>
+              </a>
+            ))}
+          </div>
+        </details>
+        </HelplineStrip>
+        <section aria-label="Quick access" className="grid grid-cols-2 gap-3 md:grid-cols-3">
+          {[
+            { id: "ai", label: "AI Companion", icon: Bot },
+            { id: "emergency", label: "ICE Card", icon: HeartPulse },
+            { id: "ai", label: "Schemes", icon: FileText },
+            { id: "security", label: "Security Tools", icon: Wrench },
+            { id: "complaints", label: "Complaints", icon: FileText },
+            { id: "academy", label: "Academy", icon: GraduationCap },
+          ].map(({ id, label, icon: Icon }) => (
+            <a key={`${id}-${label}`} href={`#${id}`} className="app-card flex min-h-20 items-center gap-3 border-slate-800 p-4 transition hover:-translate-y-0.5">
+              <Icon className="h-5 w-5 text-cyan-300" aria-hidden="true" />
+              <span className="font-semibold">{label}</span>
+            </a>
+          ))}
+        </section>
+        <ScamTicker>
         <section
           aria-label={text.tickerLabel}
           className={`scam-ticker relative flex min-h-14 items-center overflow-hidden rounded-xl border ${
@@ -1340,7 +1314,9 @@ Apply: ${scheme.applyUrl}`,
             <span aria-hidden="true">🔊</span>
           </button>
         </section>
+        </ScamTicker>
         <EmergencyErrorBoundary>
+          <EmergencySection>
           <section
             id="emergency"
             className={`scroll-mt-24 rounded-2xl border p-6 ${
@@ -1357,7 +1333,10 @@ Apply: ${scheme.applyUrl}`,
                   }`}
                 >
                   <p className="text-3xl font-extrabold text-[#FF9933]">
-                    <span aria-hidden="true">{item.icon}</span>{" "}
+                    {(() => {
+                      const Icon = emergencyIconFor(item.number);
+                      return <Icon className="inline-block h-7 w-7 align-[-0.2em]" aria-hidden="true" />;
+                    })()}{" "}
                     <span>{item.number}</span>
                   </p>
                   <p className="mt-1 text-sm">{translatedEmergencyLabels[language][emergencyContacts.indexOf(item)] ?? item.title}</p>
@@ -1394,8 +1373,10 @@ Apply: ${scheme.applyUrl}`,
               <p className="mt-3 text-sm font-semibold">Never share OTP, UPI PIN or passwords with anyone.</p>
             </div>
           </section>
+          </EmergencySection>
         </EmergencyErrorBoundary>
 
+        <AICompanionSection>
         <section
           id="ai"
           className={`scroll-mt-24 rounded-2xl border p-6 ${
@@ -1415,6 +1396,7 @@ Apply: ${scheme.applyUrl}`,
             </div>
           </details>
           <div className="grid gap-6 lg:grid-cols-2">
+            <SchemesSection>
             <div
               className={`rounded-xl border p-4 ${
                 isDark ? "border-white/10 bg-[#122A4D]" : "border-[#0B1F3A]/10 bg-[#F9FBFF]"
@@ -1649,9 +1631,12 @@ Apply: ${scheme.applyUrl}`,
                 </div>
               ) : null}
             </div>
+            </SchemesSection>
           </div>
         </section>
+        </AICompanionSection>
 
+        <ComplaintsSection>
         <section
           id="complaints"
           className={`scroll-mt-24 rounded-2xl border p-6 ${
@@ -1845,7 +1830,9 @@ Apply: ${scheme.applyUrl}`,
             )}
           </details>
         </section>
+        </ComplaintsSection>
 
+        <SecurityToolsCard>
         <section
           id="security"
           className={`scroll-mt-24 rounded-2xl border p-6 ${
@@ -1863,7 +1850,9 @@ Apply: ${scheme.applyUrl}`,
             Open Security Tools Page
           </Link>
         </section>
+        </SecurityToolsCard>
 
+        <AcademySection>
         <section
           id="academy"
           className={`scroll-mt-24 rounded-2xl border p-6 ${
@@ -1962,6 +1951,7 @@ Apply: ${scheme.applyUrl}`,
             />
           )}
         </section>
+        </AcademySection>
 
         {contactEmail ? <section
           id="contact"
@@ -1976,7 +1966,7 @@ Apply: ${scheme.applyUrl}`,
           </a>
         </section> : null}
       </main>
-      <div className="pointer-events-none fixed inset-x-0 bottom-20 z-40 flex flex-col items-end gap-2 px-4 md:bottom-6 md:px-6">
+      <div className="pointer-events-none fixed inset-x-0 bottom-20 z-40 hidden flex-col items-end gap-2 px-4 md:bottom-6 md:flex md:px-6">
         {!panicModeVisible ? (
           <button
             type="button"
@@ -1995,7 +1985,7 @@ Apply: ${scheme.applyUrl}`,
           ↑ Top
         </button>
       </div>
-      <footer className="mt-16 pb-24 pt-8 text-center text-gray-400 md:pb-8">
+      <Footer><footer className="mt-16 pb-24 pt-8 text-center text-gray-400 md:pb-8">
   <div className="flex justify-center gap-6 mb-3">
     <a href="/about" className="hover:text-white">About</a>
     <a href="/privacy" className="hover:text-white">Privacy Policy</a>
@@ -2011,8 +2001,15 @@ Apply: ${scheme.applyUrl}`,
   <div className="mt-4 flex justify-center"><PrivacyTrustBadge /></div>
   <div className="mt-4 flex justify-center"><OfflineBadge /></div>
 </footer>
-     <DynamicFloatingAIChat language={language} />
-     <MobileBottomNav activeTab={activeTab} onNavigate={scrollToSection} isDark={isDark} />
+      </Footer>
+     <DynamicFloatingAIChat language={language} open={aiChatOpen} onOpenChange={setAiChatOpen} />
+     <MobileBottomNav
+       activeTab={activeTab}
+       onNavigate={scrollToSection}
+       onOpenAI={() => setAiChatOpen(true)}
+       onOpenPanic={() => document.getElementById("panic-mode")?.scrollIntoView({ behavior: "smooth", block: "center" })}
+       isDark={isDark}
+     />
     </div>
   );
 }

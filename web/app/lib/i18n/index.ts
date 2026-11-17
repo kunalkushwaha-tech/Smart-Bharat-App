@@ -1,0 +1,21 @@
+export type Translation = {
+  language: string;
+  languageLabel: string;
+  tagline: string;
+  emergency: string;
+  ai: string;
+  complaints: string;
+  security: string;
+  academy: string;
+  schemeFinder: string;
+  state: string;
+  allStates: string;
+  evaluate: string;
+  tickerLabel: string;
+  age: string;
+  annualIncome: string;
+  contact: string;
+  contactText: string;
+  emailUs: string;
+  eligibilityCount: (count: number) => string;
+};

@@ -22,10 +22,10 @@ class SupabaseUnavailableError extends Error {
   }
 }
 
-async function withSupabaseTimeout<T>(operation: PromiseLike<T>): Promise<T> {
+async function withSupabaseTimeout<T>(operation: PromiseLike<T>, timeoutMs = SUPABASE_TIMEOUT_MS): Promise<T> {
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
   const timeout = new Promise<never>((_, reject) => {
-    timeoutId = setTimeout(() => reject(new SupabaseTimeoutError()), SUPABASE_TIMEOUT_MS);
+    timeoutId = setTimeout(() => reject(new SupabaseTimeoutError()), timeoutMs);
   });
   try {
     return await Promise.race([operation, timeout]);
@@ -127,6 +127,8 @@ export async function GET(request: Request) {
   if (!client) return withCors(NextResponse.json({ error: "not configured" }, { status: 503 }), request);
 
   try {
+    const startedAt = Date.now();
+    const remainingTimeout = () => Math.max(1, SUPABASE_TIMEOUT_MS - (Date.now() - startedAt));
     let data: Array<Record<string, unknown>> | null = null;
     let error: unknown = null;
     try {
@@ -134,7 +136,7 @@ export async function GET(request: Request) {
         .from("scam_reports_public")
         .select("id, created_at, scam_type, contact_info, description, normalized_value, abuse_flags")
         .order("created_at", { ascending: false })
-        .limit(100));
+        .limit(100), remainingTimeout());
       data = result.data as Array<Record<string, unknown>> | null;
       error = result.error;
     } catch (columnError) {
@@ -147,7 +149,7 @@ export async function GET(request: Request) {
         .from("scam_reports_public")
         .select("id, created_at, scam_type, contact_info, description")
         .order("created_at", { ascending: false })
-        .limit(100));
+        .limit(100), remainingTimeout());
       data = fallback.data as Array<Record<string, unknown>> | null;
       error = fallback.error;
     }

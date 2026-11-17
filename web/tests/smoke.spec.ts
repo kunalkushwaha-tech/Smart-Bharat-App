@@ -101,3 +101,38 @@ test("quick link check and security metadata surfaces render", async ({ page }) 
   await page.goto("/share", { waitUntil: "domcontentloaded" });
   await expect(page.getByRole("heading", { name: "Shared with Bharat App" })).toBeVisible();
 });
+
+test.describe("home visual baselines", () => {
+  for (const viewport of [
+    { name: "375", width: 375, height: 812 },
+    { name: "768", width: 768, height: 1024 },
+    { name: "1440", width: 1440, height: 900 },
+  ]) {
+    for (const mode of ["dark", "light", "high-contrast"]) {
+      test(`${viewport.name}-${mode}`, async ({ page }) => {
+        await page.setViewportSize({ width: viewport.width, height: viewport.height });
+        await page.addInitScript((selectedMode) => {
+          localStorage.clear();
+          localStorage.setItem("theme", selectedMode === "light" ? "light" : "dark");
+          localStorage.setItem("high-contrast", String(selectedMode === "high-contrast"));
+        }, mode);
+        await page.route("**/api/scam-reports**", (route) =>
+          route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ reports: [] }) }),
+        );
+        await page.goto("/", { waitUntil: "domcontentloaded" });
+        await expect(page.locator(`div.theme-${mode === "light" ? "light" : "dark"}`)).toBeVisible();
+        if (mode === "high-contrast") {
+          await page.getByRole("button", { name: "Toggle high contrast and large text mode" }).click();
+          await expect(page.locator("div.high-contrast")).toBeVisible();
+        }
+        await expect(page.getByRole("heading", { name: "Check a link" })).toBeVisible();
+        await expect(page.getByRole("heading", { name: "Spot the Scam Simulator" })).toBeVisible();
+        await expect(page.getByText("Fraud Evidence Vault", { exact: true })).toBeVisible();
+        await expect(page).toHaveScreenshot(`home-${viewport.name}-${mode}.png`, {
+          animations: "disabled",
+          timeout: 15000,
+        });
+      });
+    }
+  }
+});

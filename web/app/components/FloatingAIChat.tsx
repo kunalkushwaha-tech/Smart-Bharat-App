@@ -9,8 +9,13 @@ type ChatMessage = {
   text: string;
 };
 
-export default function FloatingAIChat({ language = "en" }: { language?: "en" | "hi" | "mr" }) {
-  const [open, setOpen] = useState(false);
+export default function FloatingAIChat({ language = "en", open: controlledOpen, onOpenChange }: { language?: "en" | "hi" | "mr"; open?: boolean; onOpenChange?: (open: boolean) => void }) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = (next: boolean) => {
+    onOpenChange?.(next);
+    if (controlledOpen === undefined) setInternalOpen(next);
+  };
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([
     { role: "bot", text: "Jai Hind! Ask me about cyber safety, complaints, or citizen services." },
@@ -46,7 +51,7 @@ export default function FloatingAIChat({ language = "en" }: { language?: "en" | 
   };
 
   return (
-    <div className="fixed bottom-24 right-4 z-[100] sm:bottom-6 sm:right-6">
+    <div className={`${open ? "block" : "hidden"} fixed bottom-24 right-4 z-[100] sm:bottom-6 sm:right-6 md:block`}>
       {open ? (
         <section
           aria-label="AI Companion chat"
@@ -116,12 +121,12 @@ export default function FloatingAIChat({ language = "en" }: { language?: "en" | 
 
       <button
         type="button"
-        onClick={() => setOpen((isOpen) => !isOpen)}
+        onClick={() => setOpen(!open)}
         className="ml-auto flex h-14 w-14 items-center justify-center rounded-full border-2 border-[#FF9933] bg-[#122A4D] text-2xl text-[#ECF2FA] shadow-xl shadow-black/30 transition hover:scale-105 hover:bg-[#1b3b68]"
         aria-label={open ? "Minimize AI chat" : "Open AI Companion chat"}
         aria-expanded={open}
       >
-        🤖
+        <span aria-hidden="true">AI</span>
       </button>
     </div>
   );
